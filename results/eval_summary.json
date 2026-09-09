@@ -1,12 +1,25 @@
 {
   "intent_accuracy": 0.9337,
   "intent_f1_macro": 0.9333,
-  "avg_classifier_confidence": 0.6579,
-  "n_examples": 196,
-  "judge_score_mean": "skipped_rate_limit",
-  "note": "LLM reply generation skipped to avoid Groq rate limits; classifier metrics are real",
-  "distilbert_val_f1": 1.0,
+  "avg_classifier_confidence": 0.658,
   "distilbert_val_accuracy": 1.0,
-  "n_golden_examples": 196,
-  "distilbert_epochs": 8
+  "distilbert_val_f1": 1.0,
+  "golden_set_size": 196,
+  "n_intents": 7,
+  "faiss_index_size": 28277,
+  "llm_judge": {
+    "n_examples": 5,
+    "mean_overall": 4.52,
+    "mean_relevance": 4.40,
+    "mean_tone": 5.00,
+    "mean_actionability": 4.00,
+    "note": "5 examples scored before Gemini free-tier rate limit (15 RPM). Judge used gemini-3.6-flash at temperature 0. Agent LLM (Groq) was unavailable during this run; replies were intent-matched fallbacks, so scores reflect template reply quality, not RAG-generated replies."
+  },
+  "escalation_examples": [
+    {"message": "spotify keeps buffering on my iphone, tried reinstalling twice", "intent": "playback_issue", "escalate": false, "score": 0.21},
+    {"message": "you charged me even though i cancelled. i want a refund", "intent": "billing_payment", "escalate": true, "score": 0.71},
+    {"message": "can't log in and i think my account was hacked", "intent": "account_access", "escalate": true, "score": 0.83},
+    {"message": "please add offline mode to all devices", "intent": "feature_request", "escalate": false, "score": 0.08},
+    {"message": "hi how do i cancel my premium subscription", "intent": "general_inquiry", "escalate": false, "score": 0.19}
+  ]
 }
