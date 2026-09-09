@@ -225,10 +225,8 @@ Do NOT copy the examples verbatim — adapt to this specific situation.
 Output ONLY the reply text, nothing else."""
 
         try:
-            from openai import OpenAI
-            client = OpenAI()
-            response = client.chat.completions.create(
-                model=self.llm_model,
+            from src.utils import llm_chat
+            reply = llm_chat(
                 messages=[
                     {"role": "system", "content": "You are a Spotify customer support agent."},
                     {"role": "user", "content": prompt},
@@ -236,14 +234,12 @@ Output ONLY the reply text, nothing else."""
                 temperature=self.temperature,
                 max_tokens=self.max_tokens,
             )
-            reply = response.choices[0].message.content.strip()
-            usage = response.usage
             return GeneratedReply(
                 reply=reply,
                 retrieved_examples=retrieved,
                 model_used=self.llm_model,
-                prompt_tokens=usage.prompt_tokens,
-                completion_tokens=usage.completion_tokens,
+                prompt_tokens=0,
+                completion_tokens=0,
             )
         except Exception as e:
             log.error("LLM generation failed: %s", e)

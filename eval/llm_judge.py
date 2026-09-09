@@ -138,19 +138,16 @@ class LLMJudge:
         self, customer_message: str, agent_reply: str, temperature: float = 0.0
     ) -> dict | None:
         try:
-            from openai import OpenAI
-            client = OpenAI()
+            from src.utils import llm_chat
             prompt = JUDGE_RUBRIC.format(
                 customer_message=customer_message,
                 agent_reply=agent_reply,
             )
-            resp = client.chat.completions.create(
-                model=self.model,
+            raw = llm_chat(
                 messages=[{"role": "user", "content": prompt}],
                 temperature=temperature,
                 max_tokens=120,
             )
-            raw = resp.choices[0].message.content.strip()
             obj = json.loads(raw)
             # Validate
             for dim in ["relevance", "accuracy", "tone", "conciseness", "actionability"]:

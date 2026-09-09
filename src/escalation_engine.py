@@ -22,9 +22,33 @@ from __future__ import annotations
 import re
 from typing import NamedTuple
 
-from textblob import TextBlob
-
 from src.utils import get_logger, load_config
+
+# ---------------------------------------------------------------------------
+# Sentiment backend — prefer cardiffnlp/twitter-roberta-base-sentiment
+# (trained on 124M tweets, handles sarcasm much better than TextBlob).
+# Falls back to TextBlob if transformers isn't installed.
+# ---------------------------------------------------------------------------
+_sentiment_pipeline = None
+
+def _load_sentiment():
+    global _sentiment_pipeline
+    if _sentiment_pipeline is not None:
+        return _sentiment_pipeline
+    try:
+        from transformers import pipeline as hf_pipeline
+        _sentiment_pipeline = hf_pipeline(
+            "text-classification",
+            model="cardiffnlp/twitter-roberta-base-sentiment-latest",
+            top_k=None,
+            truncation=True,
+            max_length=512,
+        )
+        log.info("Loaded twitter-roberta-base-sentiment-latest for sentiment.")
+    except Exception:
+        _sentiment_pipeline = "textblob"
+        log.warning("transformers not available; falling back to TextBlob sentiment.")
+    return _sentiment_pipeline
 
 log = get_logger(__name__)
 
@@ -175,13 +199,24 @@ class EscalationEngine:
     def _sentiment_signal(self, text: str) -> float:
         """
         Negative polarity + amplifier words -> high escalation signal.
-        TextBlob polarity is in [-1, 1]. We also count amplifier words.
+        Uses twitter-roberta-base-sentiment when available; falls back to TextBlob.
         """
-        blob = TextBlob(text)
-        polarity = blob.sentiment.polarity    # [-1, 1]
+        pipeline = _load_sentiment()
 
-        # Normalise: polarity=-1 -> signal=1, polarity=0 -> 0.3 (mild), polarity=1 -> 0
-        base_signal = max(0.0, (0.3 - polarity) / 1.3)
+        if pipeline != "textblob":
+            # RoBERTa returns [{label, score}, ...] for each label
+            results = pipeline(text[:512])
+            # results is a list of dicts: [{"label": "negative", "score": 0.9}, ...]
+            label_map = {r["label"].lower(): r["score"] for r in results[0]}
+            neg = label_map.get("negative", 0.0)
+            neu = label_map.get("neutral", 0.0)
+            # map negative prob to [0, 1] escalation signal
+            # high negative -> high signal; neutral is mild; positive -> 0
+            base_signal = neg * 0.9 + neu * 0.15
+        else:
+            from textblob import TextBlob
+            polarity = TextBlob(text).sentiment.polarity  # [-1, 1]
+            base_signal = max(0.0, (0.3 - polarity) / 1.3)
 
         # Amplifier bonus
         words = set(text.lower().split())

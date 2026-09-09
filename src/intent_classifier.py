@@ -289,8 +289,7 @@ class IntentClassifier:
         Returns (intent, confidence, used=True).
         """
         try:
-            from openai import OpenAI
-            client = OpenAI()
+            from src.utils import llm_chat
             top3 = sorted(scores, key=scores.get, reverse=True)[:3]
             prompt = f"""You are classifying a Spotify customer-support message.
 
@@ -307,13 +306,11 @@ Respond with a JSON object:
 
 Only output valid JSON, nothing else."""
 
-            response = client.chat.completions.create(
-                model=self.llm_model,
+            raw = llm_chat(
                 messages=[{"role": "user", "content": prompt}],
                 temperature=0.0,
                 max_tokens=60,
             )
-            raw = response.choices[0].message.content.strip()
             obj = json.loads(raw)
             intent = obj.get("intent", top3[0])
             if intent not in INTENT_LABELS:

@@ -1,9 +1,10 @@
 """
-Shared utilities: config loading, logging, text cleaning, timing.
+Shared utilities: config loading, logging, text cleaning, timing, LLM client.
 """
 
 from __future__ import annotations
 
+import os
 import re
 import time
 import functools
@@ -69,3 +70,39 @@ def ensure_dir(path: str | Path) -> Path:
     p = Path(path)
     p.mkdir(parents=True, exist_ok=True)
     return p
+
+
+def get_llm_client():
+    """
+    Return a Groq client (free, no billing).
+    Falls back to OpenAI if OPENAI_API_KEY is set and GROQ_API_KEY is not.
+    """
+    groq_key = os.environ.get("GROQ_API_KEY")
+    if groq_key:
+        from groq import Groq
+        return Groq(api_key=groq_key), "groq"
+    openai_key = os.environ.get("OPENAI_API_KEY")
+    if openai_key:
+        from openai import OpenAI
+        return OpenAI(api_key=openai_key), "openai"
+    raise RuntimeError(
+        "No LLM API key found. Set GROQ_API_KEY (free) or OPENAI_API_KEY."
+    )
+
+
+def llm_chat(messages: list[dict], model: str | None = None,
+             temperature: float = 0.0, max_tokens: int = 512) -> str:
+    """
+    Send a chat completion request. Automatically picks Groq or OpenAI.
+    model defaults to llama-3.3-70b-versatile on Groq, gpt-4o-mini on OpenAI.
+    """
+    client, provider = get_llm_client()
+    if model is None:
+        model = "llama-3.3-70b-versatile" if provider == "groq" else "gpt-4o-mini"
+    response = client.chat.completions.create(
+        model=model,
+        messages=messages,
+        temperature=temperature,
+        max_tokens=max_tokens,
+    )
+    return response.choices[0].message.content.strip()

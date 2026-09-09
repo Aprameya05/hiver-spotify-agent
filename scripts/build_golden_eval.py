@@ -52,8 +52,7 @@ def llm_verify_label(text: str, proposed_intent: str, scores: dict) -> tuple[str
     Returns (final_intent, confidence).
     """
     try:
-        from openai import OpenAI
-        client = OpenAI()
+        from src.utils import llm_chat
         top3 = sorted(scores, key=scores.get, reverse=True)[:3]
         prompt = f"""You are labeling Spotify customer support tweets for intent classification.
 
@@ -74,13 +73,12 @@ Available intents:
 Respond ONLY with valid JSON:
 {{"intent": "<label>", "confidence": <0.0-1.0>}}"""
 
-        resp = client.chat.completions.create(
-            model="gpt-4o-mini",
+        raw = llm_chat(
             messages=[{"role": "user", "content": prompt}],
             temperature=0.0,
             max_tokens=50,
         )
-        obj = json.loads(resp.choices[0].message.content.strip())
+        obj = json.loads(raw)
         intent = obj.get("intent", proposed_intent)
         if intent not in INTENT_LABELS:
             intent = proposed_intent
