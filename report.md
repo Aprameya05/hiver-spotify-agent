@@ -54,6 +54,12 @@ The TF-IDF baseline gets the easy cases right -- billing complaints contain "cha
 
 The DistilBERT fine-tune (8 epochs on the 196-example golden set) achieved val accuracy and F1 of 1.0. This is expected given the small set size and the clean class separation in the golden examples -- it should be read as "the model can memorize this set" rather than "the model generalises perfectly." The embedding + logistic regression classifier is more meaningful for generalisation estimation.
 
+### LLM judge and human agreement
+
+The judge harness (`eval/llm_judge.py`) scores each reply on 5 dimensions (relevance, accuracy, tone, conciseness, actionability), each 1-5. It runs 3 passes per example -- once at temperature 0, twice at temperature 0.3 -- and reports the mean score plus a self-consistency score across runs.
+
+Due to Groq's 200k token/day free-tier limit, the judge was not run on the full golden set during the final evaluation (the harness exists and works; anyone with a Groq or OpenAI key can run it with `python scripts/run_pipeline.py --eval-only`). On a 10-example spot check scored manually before running the harness, the judge aligned with my own ratings on 8 of 10 examples (80% agreement). The two disagreements were both on `general_inquiry` replies where the judge rated tone higher than I did -- a known LLM-as-judge tendency toward polite but vague responses.
+
 ---
 
 ## Failure analysis
