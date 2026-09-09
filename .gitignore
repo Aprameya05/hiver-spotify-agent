@@ -1,0 +1,44 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+.eggs/
+*.egg
+.venv/
+venv/
+env/
+
+# Data (raw is large; processed kept for reproducibility)
+data/raw/
+data/processed/embeddings/
+*.csv.gz
+*.parquet
+
+# Models & caches
+models/
+.cache/
+*.pkl
+*.faiss
+
+# API keys / secrets
+.env
+secrets.yaml
+*.key
+
+# Notebooks checkpoints
+.ipynb_checkpoints/
+
+# Results (committed selectively)
+results/*.json
+!results/eval_summary.json
+!results/baseline_comparison.json
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/

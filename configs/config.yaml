@@ -1,0 +1,54 @@
+brand: spotify
+brand_handle: SpotifyCares
+
+data:
+  kaggle_dataset: thoughtvector/customer-support-on-twitter
+  raw_path: data/raw/twcs.csv
+  processed_path: data/processed/spotify_threads.jsonl
+  golden_eval_path: data/golden_eval/examples.json
+  max_threads: 50000       # cap for dev; set null for full run
+  min_thread_length: 1
+
+intents:
+  n_clusters: 8            # initial clustering pass
+  final_n_intents: 7       # after LLM merging
+  embedding_model: sentence-transformers/all-mpnet-base-v2
+  classifier_model: sentence-transformers/all-mpnet-base-v2
+  confidence_threshold: 0.62   # below this -> escalation signal
+
+reply_generator:
+  retrieval_top_k: 5
+  temporal_decay_days: 365     # half-life for older responses
+  max_reply_tokens: 280
+  llm_model: gpt-4o-mini
+  temperature: 0.3
+
+escalation:
+  sentiment_anger_threshold: -0.4   # TextBlob polarity
+  complexity_token_threshold: 60    # long messages are harder
+  high_sensitivity_intents:
+    - billing_payment
+    - account_security
+  auto_handle_intents:
+    - feature_request
+    - general_inquiry
+  low_confidence_escalate: true
+
+evaluation:
+  judge_model: gpt-4o
+  judge_temperature: 0.0
+  n_judge_runs: 3           # majority vote for stability
+  metrics:
+    - intent_accuracy
+    - intent_f1_macro
+    - reply_bleu
+    - reply_rouge_l
+    - escalation_precision
+    - escalation_recall
+    - judge_score_mean
+
+paths:
+  index_path: data/processed/faiss.index
+  metadata_path: data/processed/faiss_metadata.jsonl
+  results_dir: results/
+  models_dir: models/
