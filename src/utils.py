@@ -94,11 +94,11 @@ def llm_chat(messages: list[dict], model: str | None = None,
              temperature: float = 0.0, max_tokens: int = 512) -> str:
     """
     Send a chat completion request. Automatically picks Groq or OpenAI.
-    model defaults to llama-3.3-70b-versatile on Groq, gpt-4o-mini on OpenAI.
+    model defaults to qwen/qwen3-32b on Groq, gpt-4o-mini on OpenAI.
     """
     client, provider = get_llm_client()
     if model is None:
-        model = "llama-3.3-70b-versatile" if provider == "groq" else "gpt-4o-mini"
+        model = "qwen/qwen3-32b" if provider == "groq" else "gpt-4o-mini"
     response = client.chat.completions.create(
         model=model,
         messages=messages,

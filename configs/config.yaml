@@ -20,7 +20,7 @@ reply_generator:
   retrieval_top_k: 5
   temporal_decay_days: 365     # half-life for older responses
   max_reply_tokens: 280
-  llm_model: gpt-4o-mini
+  llm_model: qwen/qwen3-32b
   temperature: 0.3
 
 escalation:
@@ -35,7 +35,7 @@ escalation:
   low_confidence_escalate: true
 
 evaluation:
-  judge_model: gpt-4o
+  judge_model: qwen/qwen3-32b
   judge_temperature: 0.0
   n_judge_runs: 3           # majority vote for stability
   metrics:
