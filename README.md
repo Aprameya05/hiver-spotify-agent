@@ -7,6 +7,21 @@ A production-grade AI customer support agent for Spotify, built on real Twitter 
 
 ---
 
+## Deliverables index
+
+| Deliverable | Location |
+|---|---|
+| Runnable pipeline | `scripts/run_pipeline.py` -- see Quickstart below |
+| Golden eval set (196 examples) | `data/golden_eval/examples.json` |
+| Labeling methodology | `data/golden_eval/labeling_notes.md` |
+| Evaluation harness + LLM judge | `eval/harness.py`, `eval/llm_judge.py` |
+| Report (problem framing, baselines, failure analysis) | `report.md` |
+| Decision log (16 non-obvious decisions) | `decision_log.md` |
+| Real eval results | `results/eval_summary.json` |
+| Agent sanity check output | `results/sanity_check.json` |
+
+---
+
 ## What it does
 
 1. **Intent classification** -- classifies each incoming customer message into one of 7 defined intents using a two-stage embedding classifier with a confidence-gated fallback.
