@@ -1,0 +1,12 @@
+{
+  "intent_accuracy": 0.9337,
+  "intent_f1_macro": 0.9333,
+  "avg_classifier_confidence": 0.6579,
+  "n_examples": 196,
+  "judge_score_mean": "skipped_rate_limit",
+  "note": "LLM reply generation skipped to avoid Groq rate limits; classifier metrics are real",
+  "distilbert_val_f1": 1.0,
+  "distilbert_val_accuracy": 1.0,
+  "n_golden_examples": 196,
+  "distilbert_epochs": 8
+}

@@ -1,0 +1,47 @@
+[
+  {
+    "message": "spotify keeps buffering on my iphone, tried reinstalling twice",
+    "intent": "playback_issue",
+    "confidence": 0.85,
+    "escalate": false,
+    "escalation_score": 0.2464,
+    "reply": "Sorry about the buffering! Since you've already reinstalled, please DM us your iPhone model, iOS version, and Spotify version so we can look into it further.",
+    "latency_ms": 9251.6
+  },
+  {
+    "message": "you charged me even though i cancelled. i want a refund",
+    "intent": "billing_payment",
+    "confidence": 0.9194104078632961,
+    "escalate": false,
+    "escalation_score": 0.3923,
+    "reply": "Hey! Sorry about that. Please DM us your account email so we can check the charge and help with a refund. /TK",
+    "latency_ms": 477.0
+  },
+  {
+    "message": "can't log in and i think my account was hacked",
+    "intent": "account_access",
+    "confidence": 0.9602148609726749,
+    "escalate": false,
+    "escalation_score": 0.364,
+    "reply": "Hey there! Sorry to hear your account got compromised. Please DM us your username or email so we can help you secure it and get you back in. /CM",
+    "latency_ms": 831.9
+  },
+  {
+    "message": "please add offline mode to all devices",
+    "intent": "feature_request",
+    "confidence": 0.95,
+    "escalate": false,
+    "escalation_score": 0.0422,
+    "reply": "Hey! Thanks for the suggestion. We're always working to improve offline mode across platforms. Keep an eye on app updates for new features! /LW",
+    "latency_ms": 913.5
+  },
+  {
+    "message": "hi how do i cancel my premium subscription",
+    "intent": "billing_payment",
+    "confidence": 0.7872541314331749,
+    "escalate": false,
+    "escalation_score": 0.2604,
+    "reply": "Hey there. We've just sent a DM your way. Let's carry on chatting there /QI",
+    "latency_ms": 464.4
+  }
+]
