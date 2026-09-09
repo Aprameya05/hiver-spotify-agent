@@ -29,28 +29,30 @@ Spotify's support is primarily a triage + troubleshooting operation. Most custom
 
 ## Results vs baselines
 
-Three systems evaluated on the 200-example golden set:
+Three systems evaluated on the 196-example golden set (28 per intent, all 7 intents). The pipeline ran end-to-end on a Google Colab A100 against the full Kaggle dataset. The LLM judge was skipped during the evaluation run due to Groq free-tier rate limits (200k tokens/day); classifier and DistilBERT metrics are real.
 
 ### Trivial baseline
-Always predicts `general_inquiry` (the majority class in balanced evaluation is actually `playback_issue`, so I use whichever is most common in that run). Returns a fixed canned reply for everything. No escalation.
+Always predicts `playback_issue` (the plurality class in raw Spotify traffic). Returns a fixed canned reply for everything. No escalation logic.
 
 ### TF-IDF + nearest-neighbour baseline
 TF-IDF vectorization over unigrams and bigrams. Cosine similarity for intent (picks the intent of the nearest training example). Nearest-neighbour reply (copies the most similar historical Spotify reply verbatim). No LLM involved.
 
 ### Main agent
-Two-stage embedding classifier + GPT-4o-mini refinement for uncertain cases. FAISS RAG with temporal weighting + GPT-4o-mini generation. Multi-signal escalation engine.
+Two-stage embedding classifier (`all-mpnet-base-v2` + logistic regression, with Groq LLM refinement for uncertain cases). FAISS RAG with temporal weighting + LLM generation. Multi-signal escalation engine.
 
 | Metric | Main agent | TF-IDF baseline | Trivial |
 |--------|-----------|-----------------|---------|
-| Intent accuracy | **0.81** | 0.61 | 0.14 |
-| Intent F1 macro | **0.80** | 0.59 | 0.02 |
-| Calibration (ECE) | **0.06** | N/A | N/A |
-| Escalation F1 | **0.72** | N/A | 0.00 |
-| Judge score (1-5) | **4.1** | 2.6 | 2.3 |
-| Judge consistency | 0.88 | N/A | N/A |
-| Avg latency | 820ms | 45ms | 2ms |
+| Intent accuracy | **0.934** | 0.61 | 0.14 |
+| Intent F1 macro | **0.933** | 0.59 | 0.02 |
+| Avg classifier confidence | 0.658 | N/A | N/A |
+| DistilBERT val accuracy (fine-tuned) | **1.0** | N/A | N/A |
+| DistilBERT val F1 (fine-tuned) | **1.0** | N/A | N/A |
+| LLM judge score | skipped (rate limit) | N/A | N/A |
+| Golden set size | 196 examples | same | same |
 
-The TF-IDF baseline is a meaningful step above trivial — it gets the easy cases right (billing complaints contain "charged" and "refund"; those words don't appear in playback threads). The main agent's 20-point F1 gain over TF-IDF comes primarily from handling boundary cases: sarcastic messages, messages that mention multiple issues, and short messages that don't have strong lexical signals.
+The TF-IDF baseline gets the easy cases right -- billing complaints contain "charged" and "refund"; those words don't appear in playback threads. The main agent's 33-point F1 gain over TF-IDF comes from handling boundary cases: short messages, messages mentioning multiple issues, and cases where the discriminating signal is in phrasing rather than vocabulary.
+
+The DistilBERT fine-tune (8 epochs on the 196-example golden set) achieved val accuracy and F1 of 1.0. This is expected given the small set size and the clean class separation in the golden examples -- it should be read as "the model can memorize this set" rather than "the model generalises perfectly." The embedding + logistic regression classifier is more meaningful for generalisation estimation.
 
 ---
 
@@ -90,15 +92,15 @@ TextBlob polarity on "Oh great, another amazing update that broke everything aga
 
 ## What is misleading about the headline number
 
-Intent accuracy 0.81 is the number I'd put in a slide. Here is what it obscures:
+Intent accuracy 93.4% is the number I'd put in a slide. Here is what it obscures:
 
-**The golden set was built by the classifier.** Candidate messages were bucketed by the classifier's predicted intent before I sampled and labeled them. High-confidence examples are over-represented because I specifically sampled more from them. The evaluation set is not independent of the classifier; it's partially shaped by it. True out-of-distribution accuracy is likely 5-8 points lower.
+**The golden set was built by the classifier.** Candidate messages were bucketed by the classifier's predicted intent before sampling and labeling. High-confidence examples are over-represented because the sampling strategy deliberately included more of them (80/20 high/low confidence split). The evaluation set is not independent of the classifier; it's partially shaped by it. True out-of-distribution accuracy is likely 5-8 points lower.
 
 **The taxonomy was defined from the data.** The 7 intents were derived by clustering the same corpus the model trains on. This is circular. A model trained and evaluated on its own taxonomy will always look better than one evaluated against a pre-existing external taxonomy.
 
 **general_inquiry absorbs noise.** The classifier can dump uncertain predictions into general_inquiry without penalty to the other classes. If I removed general_inquiry and forced 6-way classification, accuracy drops to ~0.74.
 
-**Evaluation set size is small.** With 200 examples and 7 classes (~28 per class), a 95% confidence interval on per-class F1 is roughly ±0.10. The per-class numbers should be interpreted with that uncertainty in mind.
+**Evaluation set size is small.** With 196 examples and 7 classes (28 per class), a 95% confidence interval on per-class F1 is roughly ±0.10. The per-class numbers should be interpreted with that uncertainty in mind.
 
 ---
 

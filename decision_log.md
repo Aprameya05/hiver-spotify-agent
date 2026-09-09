@@ -12,7 +12,7 @@ Spotify has a high tweet volume in the dataset (~30k threads), a clear and consi
 
 **2. Two-stage classifier (embedding + LLM refinement) rather than LLM-first**
 
-Running GPT-4o on every message would cost ~$0.002 per call and add 600-800ms latency. On 30k threads, that's $60 just for training data labeling, and in production it's unacceptably slow for a first-pass triage. The embedding classifier is essentially free after the first pass and handles 80-85% of cases with >0.80 confidence. LLM refinement is reserved for the uncertain minority.
+Running an LLM on every message adds 600-800ms latency and burns through free-tier quota fast. The embedding classifier is essentially free after the first pass and handles 80-85% of cases with confidence above 0.80. LLM refinement (via Groq, using qwen/qwen3.8-27b) is reserved for the uncertain minority -- roughly 15-20% of messages.
 
 ---
 
@@ -60,7 +60,7 @@ A golden set built only from high-confidence classifier predictions would be eas
 
 **10. LLM judge runs 3 times, not once**
 
-Running the judge once and taking the result is hiding variance. LLMs have non-trivial token-sampling randomness even at temperature 0. By running 3 times (once at temp 0, twice at temp 0.3) and reporting the mean plus the consistency score, I make the reliability of the judge measurement explicit. A judge with consistency 0.65 should be trusted less than one at 0.92. Most papers don't report this — I think it's important.
+Running the judge once and taking the result is hiding variance. LLMs have non-trivial token-sampling randomness even at temperature 0. By running 3 times (once at temp 0, twice at temp 0.3) and reporting the mean plus the consistency score, I make the reliability of the judge measurement explicit. A judge with consistency 0.65 should be trusted less than one at 0.92. Most papers don't report this. In practice the LLM judge run was skipped in the final eval due to Groq's 200k token/day free-tier limit -- the harness code is complete and works, but the final eval_summary reports classifier metrics only.
 
 ---
 
@@ -88,6 +88,12 @@ The FAISS metadata file stores the full customer text and Spotify reply alongsid
 
 ---
 
-**15. Report focuses on failure over success**
+**15. Fine-tuned DistilBERT as a second classifier alongside the embedding approach**
 
-The assignment said "the proof is worth more than the system." I spent proportionally more time on failure analysis, calibration measurement, and the "what is misleading" section than on hyperparameter tuning. A system that scores 0.81 and knows exactly why it fails at the remaining 0.19 is more trustworthy than one that scores 0.85 with no analysis of the errors. The headline number is not the point.
+Rather than just describing fine-tuning as a "what I'd do next" item, I actually did it on the 196-example golden set for 8 epochs. Val accuracy and F1 both hit 1.0. I treat this result honestly in the report -- at 196 examples and 28 per class, val F1 of 1.0 means the model can memorize the set, not that it generalises perfectly. The value of doing it is showing the pipeline works end-to-end, not claiming a better headline number. The saved model is in `models/distilbert-intent/` (gitignored due to size).
+
+---
+
+**16. Report focuses on failure over success**
+
+The assignment said "the proof is worth more than the system." I spent proportionally more time on failure analysis, calibration measurement, and the "what is misleading" section than on hyperparameter tuning. A system that scores 93.4% and knows exactly why it fails at the remaining 6.6% is more trustworthy than one that scores higher with no analysis of the errors. The headline number is not the point.

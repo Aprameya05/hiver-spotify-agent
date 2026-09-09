@@ -2,7 +2,7 @@
 
 ## Overview
 
-The golden evaluation set contains **200 hand-labeled customer messages** extracted
+The golden evaluation set contains **196 hand-labeled customer messages** extracted
 from real Spotify support threads in the Twitter customer-support dataset
 (Kaggle: thoughtvector/customer-support-on-twitter).
 
@@ -45,7 +45,7 @@ and flagged in the "notes" field.
 | app_bug             |    28 | Broadest catch-all; most noise             |
 | feature_request     |    29 | Very clean; minimal ambiguity              |
 | general_inquiry     |    29 | Intentionally includes vague examples      |
-| **Total**           | **200** |                                          |
+| **Total**           | **196** |                                          |
 
 ## Known limitations and labeling choices
 
