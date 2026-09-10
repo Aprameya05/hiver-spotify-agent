@@ -1,26 +1,22 @@
-.PHONY: install data index golden eval demo clean test
+﻿.PHONY: install run eval demo web lint help
+
+help:
+    @echo "Usage: make <target>"
 
 install:
-	pip install -e ".[dev]" --break-system-packages || pip install -r requirements.txt --break-system-packages
+    pip install -e . --break-system-packages
 
-data:
-	python scripts/run_pipeline.py --build-index
-
-golden:
-	python scripts/build_golden_eval.py
+run:
+    python scripts/run_pipeline.py --max-threads 10000
 
 eval:
-	python scripts/run_pipeline.py --eval-only
+    python scripts/run_pipeline.py --eval-only
 
 demo:
-	python scripts/demo.py
+    python scripts/demo.py
 
-batch-demo:
-	python scripts/demo.py batch data/golden_eval/examples.json --n 20
+web:
+    uvicorn app_web:app --reload --host 0.0.0.0 --port 8000
 
-test:
-	pytest tests/ -v
-
-clean:
-	find . -type d -name __pycache__ -exec rm -rf {} + 2>/dev/null; true
-	find . -name "*.pyc" -delete 2>/dev/null; true
+lint:
+    python -m mypy src/ --ignore-missing-imports --no-error-summary

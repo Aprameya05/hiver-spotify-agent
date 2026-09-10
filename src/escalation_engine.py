@@ -31,7 +31,8 @@ from src.utils import get_logger, load_config
 # ---------------------------------------------------------------------------
 _sentiment_pipeline = None
 
-def _load_sentiment():
+def _load_sentiment() -> object:
+    """Return the Cardiff NLP sentiment pipeline, or the string 'textblob' as a fallback sentinel."""
     global _sentiment_pipeline
     if _sentiment_pipeline is not None:
         return _sentiment_pipeline
@@ -101,7 +102,8 @@ class EscalationDecision(NamedTuple):
 
 
 class EscalationEngine:
-    def __init__(self, cfg: dict | None = None):
+    def __init__(self, cfg: dict | None = None) -> None:
+        """Load escalation thresholds and signal weights from config."""
         self.cfg = cfg or load_config()
         esc = self.cfg["escalation"]
         self.sentiment_threshold = esc["sentiment_anger_threshold"]
@@ -110,6 +112,8 @@ class EscalationEngine:
         self.auto_handle_intents = set(esc["auto_handle_intents"])
         self.low_confidence_escalate = esc["low_confidence_escalate"]
         self.confidence_threshold = self.cfg["intents"]["confidence_threshold"]
+        # Per-intent thresholds override the global 0.5 threshold
+        self.per_intent_thresholds: dict[str, float] = esc.get("per_intent_thresholds", {})
 
         # Signal weights (must sum to 1.0)
         self._weights = {
@@ -136,7 +140,9 @@ class EscalationEngine:
         score = max(0.0, min(1.0, score))
 
         reasons: list[str] = []
-        should_escalate = score >= 0.5
+        # Use per-intent threshold if configured, else global 0.5
+        threshold = self.per_intent_thresholds.get(intent, 0.5)
+        should_escalate = score >= threshold
 
         # Determine readable reasons
         if signals["confidence"] > 0.5:

@@ -61,7 +61,8 @@ class GeneratedReply(NamedTuple):
 
 
 class ReplyGenerator:
-    def __init__(self, cfg: dict | None = None):
+    def __init__(self, cfg: dict | None = None) -> None:
+        """Load embedding model and set retrieval parameters from config."""
         self.cfg = cfg or load_config()
         model_name = self.cfg["intents"]["embedding_model"]
         self.top_k = self.cfg["reply_generator"]["retrieval_top_k"]
@@ -113,6 +114,7 @@ class ReplyGenerator:
         log.info("Index saved — %d vectors, dim=%d", self.index.ntotal, dim)
 
     def load_index(self) -> None:
+        """Read FAISS index and paired metadata from disk."""
         log.info("Loading FAISS index from %s", self.index_path)
         self.index = faiss.read_index(str(self.index_path))
         self.metadata = []
@@ -124,6 +126,7 @@ class ReplyGenerator:
         log.info("Index loaded — %d vectors", self.index.ntotal)
 
     def _ensure_index(self) -> None:
+        """Load index from disk if not already in memory; raise if unavailable."""
         if self.index is None:
             if self.index_path.exists():
                 self.load_index()

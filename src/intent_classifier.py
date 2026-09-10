@@ -133,7 +133,8 @@ class IntentClassifier:
     Prototype + logistic regression classifier with optional LLM refinement.
     """
 
-    def __init__(self, cfg: dict | None = None):
+    def __init__(self, cfg: dict | None = None) -> None:
+        """Load embedding model and initialise classifier state from config."""
         self.cfg = cfg or load_config()
         model_name = self.cfg["intents"]["embedding_model"]
         self.threshold = self.cfg["intents"]["confidence_threshold"]
@@ -177,6 +178,7 @@ class IntentClassifier:
         self._fit_on(texts, labels)
 
     def _fit_on(self, texts: list[str], labels: list[str]) -> None:
+        """Embed texts, compute per-class prototypes, and fit logistic regression."""
         embeddings = self._embed(texts)
         y = self.label_encoder.transform(labels)
 
@@ -202,12 +204,14 @@ class IntentClassifier:
         log.info("Classifier fitted (classes: %s)", list(self.label_encoder.classes_))
 
     def save(self) -> None:
+        """Persist logistic regression weights and prototype embeddings to disk."""
         ensure_dir(self._clf_path.parent)
         joblib.dump(self.clf, self._clf_path)
         np.save(self._proto_path, self._prototypes)
         log.info("Classifier saved to %s", self._clf_path.parent)
 
     def load(self) -> None:
+        """Load classifier weights and prototypes from disk."""
         self.clf = joblib.load(self._clf_path)
         self._prototypes = np.load(self._proto_path)
         log.info("Classifier loaded from %s", self._clf_path.parent)
@@ -245,6 +249,7 @@ class IntentClassifier:
         )
 
     def predict_batch(self, texts: list[str]) -> list[IntentPrediction]:
+        """Classify a list of customer messages in one embedding pass."""
         if self.clf is None:
             self.fit_from_seeds()
 
@@ -274,6 +279,7 @@ class IntentClassifier:
     # ------------------------------------------------------------------ #
 
     def _embed(self, texts: list[str]) -> np.ndarray:
+        """Return L2-normalised sentence embeddings for a list of texts."""
         return self.encoder.encode(
             texts,
             normalize_embeddings=True,

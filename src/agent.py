@@ -48,7 +48,8 @@ class SpotifyAgent:
         response = agent.handle("my app keeps crashing")
     """
 
-    def __init__(self, cfg: dict | None = None):
+    def __init__(self, cfg: dict | None = None) -> None:
+        """Instantiate classifier, reply generator, and escalation engine from config."""
         self.cfg = cfg or load_config()
         self.classifier = IntentClassifier(cfg)
         self.reply_gen = ReplyGenerator(cfg)
@@ -131,6 +132,7 @@ class SpotifyAgent:
         )
 
     def handle_batch(self, messages: list[str]) -> list[AgentResponse]:
+        """Run the full pipeline on a list of messages sequentially."""
         return [self.handle(msg) for msg in messages]
 
     def format_response(self, response: AgentResponse) -> str:

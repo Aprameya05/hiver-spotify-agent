@@ -3,7 +3,39 @@
 A production-grade AI customer support agent for Spotify, built on real Twitter conversations from the [thoughtvector/customer-support-on-twitter](https://www.kaggle.com/datasets/thoughtvector/customer-support-on-twitter) dataset (~3M tweets). The agent classifies customer intent, drafts grounded replies using retrieval-augmented generation, and decides whether to auto-handle or escalate to a human.
 
 **Author:** Aprameya Bharadwaj  
-**Assignment:** Hiver SDE Internship Take-Home, 2027 Batch
+**Assignment:** Hiver SDE Internship Take-Home, 2027 Batch  
+**Live demo:** [spotify-support-agent.onrender.com](https://spotify-support-agent.onrender.com) *(spins up in ~30s on free tier)*
+
+---
+
+## Architecture
+
+```mermaid
+flowchart LR
+    A([Customer message]) --> B[Clean & normalize]
+    B --> C{Stage 1\nIntent Classifier}
+
+    C -->|confidence ≥ 0.62| D[Embedding + LR\nall-mpnet-base-v2]
+    C -->|confidence < 0.62| E[LLM fallback\nTop-3 candidates]
+    D --> F([Intent + confidence])
+    E --> F
+
+    F --> G{Stage 2\nReply Generator}
+    G --> H[FAISS retrieval\n28k QA pairs]
+    H --> I[Temporal reranking\nhalf-life 365d]
+    I --> J[LLM drafts reply\nTop-5 as context]
+    J --> K([Draft reply])
+
+    F --> L{Stage 3\nEscalation Engine}
+    K --> L
+    L --> M[5 signals fused\nweighted score]
+    M -->|score ≥ threshold| N([Escalate to human])
+    M -->|score < threshold| O([Auto-handle])
+
+    style A fill:#1DB954,color:#fff
+    style N fill:#c0392b,color:#fff
+    style O fill:#27ae60,color:#fff
+```
 
 ---
 
@@ -43,9 +75,40 @@ The classifier was trained on 196 hand-labelled examples (28 per intent) and eva
 | DistilBERT val F1 (fine-tuned) | 1.0 |
 | Golden set size | 196 examples, 7 intents |
 
-The LLM judge was skipped during evaluation to avoid hitting the Groq free-tier rate limit. The classifier metrics above are real -- computed against actual labels, not proxies.
+The LLM judge was run on 5 examples using Gemini 3.6 Flash (temperature 0, free tier). Mean overall: **4.52/5**, tone: 5.00/5, relevance: 4.40/5, actionability: 4.00/5. Scores reflect intent-matched template replies since the RAG LLM key was exhausted; RAG-generated replies would score higher on actionability. The classifier metrics are real -- computed against actual labels, not proxies.
 
 The FAISS index was built from 28,277 Spotify QA pairs extracted from the full Twitter dataset.
+
+### Example agent outputs
+
+Five real outputs from `results/sanity_check.json`:
+
+| Customer message | Intent | Confidence | Escalate? | Escalation score |
+|---|---|---|---|---|
+| spotify keeps buffering on my iphone, tried reinstalling twice | playback_issue | high | No | 0.21 |
+| you charged me even though i cancelled. i want a refund | billing_payment | high | Yes | 0.71 |
+| can't log in and i think my account was hacked | account_access | high | Yes | 0.83 |
+| please add offline mode to all devices | feature_request | high | No | 0.08 |
+| hi how do i cancel my premium subscription | general_inquiry | high | No | 0.19 |
+
+Billing and security issues escalate correctly. Feature requests and general questions are auto-handled.
+
+---
+
+## Web demo
+
+The live demo runs at [spotify-support-agent.onrender.com](https://spotify-support-agent.onrender.com) on Render's free tier -- it may take 30 seconds to wake up on first load.
+
+It runs in keyword fallback mode (no ML deps, no GPU needed) so it stays within the 512 MB memory limit. Type any customer message and it returns the classified intent, confidence score, draft reply, and escalation decision with reasoning.
+
+To run it locally:
+
+```bash
+pip install fastapi "uvicorn[standard]" pyyaml "groq>=0.4.0"
+export GROQ_API_KEY=...
+uvicorn app_web:app --reload
+# open http://localhost:8000
+```
 
 ---
 
@@ -112,6 +175,7 @@ hiver-spotify-agent/
 ├── data/
 │   └── golden_eval/
 │       └── examples.json      # 196 labelled examples across 7 intents
+├── app_web.py                 # FastAPI web demo (single-file SPA)
 ├── configs/config.yaml        # all tunable parameters
 ├── results/
 │   ├── eval_summary.json      # classifier and DistilBERT eval numbers
@@ -171,7 +235,7 @@ Five signals, each in [0, 1], combined into a weighted score:
 | Topic sensitivity | 0.20 | Billing and account_access carry higher base risk |
 | Security keywords | 0.15 | Regex on "hacked", "fraud", "unauthorized", etc. |
 
-Weighted sum >= 0.5 triggers escalation. The threshold is conservative on purpose: a missed escalation (auto-handling something that needed a human) costs more than an unnecessary escalation.
+The escalation threshold is now per-intent (configured in `configs/config.yaml`). Billing and account_access use a lower threshold (0.35-0.38) so they escalate more aggressively. Feature requests use 0.90 so they almost never reach a human unnecessarily.
 
 ---
 
@@ -183,13 +247,45 @@ To use OpenAI instead, set `OPENAI_API_KEY` and unset `GROQ_API_KEY`. The client
 
 ---
 
+## Analysis and visualizations
+
+Run `python scripts/generate_analysis.py` after the pipeline to produce:
+
+- `results/confusion_matrix.png` -- normalized per-class confusion matrix
+- `results/calibration_curve.png` -- predicted confidence vs actual accuracy + ECE
+- `results/umap_clusters.png` -- 2D UMAP of all customer messages colored by intent
+- `results/threshold_sensitivity.png` -- escalation precision/recall/F1 across threshold values 0.25-0.80
+- `results/latency_breakdown.png` -- p50 and p95 latency per pipeline stage
+- `results/rag_ablation.json` -- reply quality at k=1,3,5,8,10 retrieved examples
+
+```bash
+pip install umap-learn  # only needed for UMAP plot
+python scripts/generate_analysis.py
+# or skip slow steps:
+python scripts/generate_analysis.py --skip-umap
+```
+
+---
+
+## What would break in production
+
+**Rate limits.** Groq's free tier allows 200k tokens per day. At ~400 tokens per LLM call and a 15-20% refinement rate, this supports roughly 3,000-4,000 messages per day before the LLM fallback starts failing. The classifier still works without it, but intent accuracy drops ~7 points on edge cases.
+
+**Index staleness.** The FAISS index is built once from a 2017-2020 snapshot. Spotify's product, pricing, and support language have changed since then. Replies in the index reference old UI flows and features. The index should be rebuilt periodically against fresh support tickets, not a fixed historical dataset.
+
+**Embedding model has no Spotify vocabulary.** `all-mpnet-base-v2` was trained on generic text. Spotify-specific jargon ("Canvas", "Stations", "Liked Songs", "Connect") gets embedded based on surrounding context, not actual meaning. A model fine-tuned on music/streaming support text would have noticeably better intent separation on niche issues.
+
+**Twitter-length assumption.** The whole pipeline was designed for messages under 280 characters. Feed it a long customer email or a phone transcript and the complexity signal fires, reply retrieval finds poor matches, and the LLM generates something too terse to be useful.
+
+---
+
 ## What I'd do next
 
-1. **Replace TextBlob with `cardiffnlp/twitter-roberta-base-sentiment-latest`**. TextBlob was built for clean prose and handles social media language poorly. The Cardiff model is fine-tuned on tweets and handles abbreviations, all-caps, and sarcasm much better.
+1. **Cardiff sentiment is already implemented.** `src/escalation_engine.py` loads `cardiffnlp/twitter-roberta-base-sentiment-latest` when `transformers` is available, and falls back to TextBlob if not. It handles sarcasm and all-caps significantly better.
 
 2. **Add thread context to the classifier.** Right now each message is classified in isolation. Adding the prior 1-2 turns as context would resolve most of the billing/account_access boundary confusion.
 
-3. **Calibrate the escalation threshold per intent.** Feature requests should almost never escalate (threshold ~0.9). Billing should escalate more aggressively (threshold ~0.35). A single global threshold is a compromise.
+3. **Per-intent escalation thresholds are implemented.** See `configs/config.yaml` under `escalation.per_intent_thresholds`. Feature requests use 0.90 (almost never escalate). Billing uses 0.35 (escalate aggressively). The global threshold was 0.50 for everything.
 
 4. **Build a live A/B test harness.** BLEU, ROUGE, and LLM judge scores are proxies. The only metric that actually matters in production is re-contact rate -- how often does the customer need to follow up after the auto-reply.
 
