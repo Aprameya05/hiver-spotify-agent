@@ -220,13 +220,23 @@ class IntentClassifier:
     # Inference                                                            #
     # ------------------------------------------------------------------ #
 
-    def predict(self, text: str) -> IntentPrediction:
-        """Classify a single customer message."""
+    def predict(self, text: str, prior_turn: str | None = None) -> IntentPrediction:
+        """Classify a single customer message.
+
+        Args:
+            text: The current customer message.
+            prior_turn: Optional previous customer turn in the same thread.
+                When provided, it is prepended to the current message before
+                embedding so the classifier can resolve follow-up ambiguities
+                (e.g. "I already paid" after "my account got locked" maps to
+                account_access rather than billing_payment).
+        """
         if self.clf is None:
             # Auto-fit from seeds if not trained yet
             self.fit_from_seeds()
 
-        emb = self._embed([text])  # (1, dim)
+        input_text = f"{prior_turn} [SEP] {text}" if prior_turn else text
+        emb = self._embed([input_text])  # (1, dim)
         proba = self.clf.predict_proba(emb)[0]  # (n_classes,)
         classes = list(self.label_encoder.classes_)
         scores = dict(zip(classes, proba.tolist()))
@@ -248,12 +258,28 @@ class IntentClassifier:
             refinement_used=refinement_used,
         )
 
-    def predict_batch(self, texts: list[str]) -> list[IntentPrediction]:
-        """Classify a list of customer messages in one embedding pass."""
+    def predict_batch(
+        self,
+        texts: list[str],
+        prior_turns: list[str | None] | None = None,
+    ) -> list[IntentPrediction]:
+        """Classify a list of customer messages in one embedding pass.
+
+        Args:
+            texts: Current customer messages.
+            prior_turns: Optional list of previous turns, one per message.
+                Pass None or a list of None values to disable context for all.
+        """
         if self.clf is None:
             self.fit_from_seeds()
 
-        embeddings = self._embed(texts)
+        if prior_turns is None:
+            prior_turns = [None] * len(texts)
+        input_texts = [
+            f"{p} [SEP] {t}" if p else t
+            for p, t in zip(prior_turns, texts)
+        ]
+        embeddings = self._embed(input_texts)
         probas = self.clf.predict_proba(embeddings)
         classes = list(self.label_encoder.classes_)
         results = []

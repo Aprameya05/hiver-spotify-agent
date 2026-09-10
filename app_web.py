@@ -117,6 +117,7 @@ app.add_middleware(
 
 class AnalyzeRequest(BaseModel):
     message: str
+    prior_turn: str | None = None  # previous customer message in the same thread
 
 
 @app.get("/", response_class=HTMLResponse)
@@ -137,9 +138,11 @@ async def analyze(req: AnalyzeRequest) -> JSONResponse:
 
     t0 = time.perf_counter()
 
+    prior_turn = (req.prior_turn or "").strip() or None
+
     if _agent is not None:
         try:
-            resp = _agent.handle(message)
+            resp = _agent.handle(message, prior_turn=prior_turn)
             intent = resp.intent.intent
             confidence = resp.intent.confidence
             reply = resp.reply.reply or TEMPLATE_REPLIES.get(intent, TEMPLATE_REPLIES["general_inquiry"])
@@ -950,6 +953,8 @@ HTML = r"""<!DOCTYPE html>
   <div class="input-panel">
     <div class="panel-header">Customer message</div>
     <textarea id="msg" placeholder="e.g. you charged me twice this month, I want a refund NOW" rows="6"></textarea>
+    <div class="panel-header" style="margin-top:12px;font-size:0.8rem;opacity:0.7">Prior turn <span style="font-weight:400;opacity:0.6">(optional -- paste the previous message to resolve follow-up ambiguity)</span></div>
+    <textarea id="prior" placeholder="e.g. my account got locked and I can't reset my password" rows="3" style="margin-top:4px"></textarea>
     <button class="analyze-btn" id="btn" onclick="analyze()">
       <div class="spinner"></div>
       <span class="btn-text">Analyze Message</span>
@@ -1026,6 +1031,7 @@ function setDoneText(t) {
 async function analyze() {
   const msg = document.getElementById('msg').value.trim();
   if (!msg) return;
+  const prior = (document.getElementById('prior') || {}).value?.trim() || null;
 
   const btn = document.getElementById('btn');
   btn.classList.add('loading');
@@ -1044,7 +1050,7 @@ async function analyze() {
     const res = await fetch('/analyze', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ message: msg }),
+      body: JSON.stringify({ message: msg, prior_turn: prior || undefined }),
     });
     data = await res.json();
   } catch(e) {

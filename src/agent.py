@@ -96,16 +96,21 @@ class SpotifyAgent:
         self._warmed_up = True
         log.info("Agent ready.")
 
-    def handle(self, message: str) -> AgentResponse:
-        """
-        Process a single customer message end-to-end.
+    def handle(self, message: str, prior_turn: str | None = None) -> AgentResponse:
+        """Process a single customer message end-to-end.
+
+        Args:
+            message: The current customer message.
+            prior_turn: Optional previous customer message in the same thread.
+                Passed to the classifier to resolve follow-up ambiguities.
         """
         t0 = time.perf_counter()
 
         cleaned = clean_tweet(message)
+        cleaned_prior = clean_tweet(prior_turn) if prior_turn else None
 
         # Stage 1: classify
-        intent_pred = self.classifier.predict(cleaned)
+        intent_pred = self.classifier.predict(cleaned, prior_turn=cleaned_prior)
         log.debug("Intent: %s (%.2f)", intent_pred.intent, intent_pred.confidence)
 
         # Stage 2: generate reply
