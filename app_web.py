@@ -140,6 +140,8 @@ async def analyze(req: AnalyzeRequest) -> JSONResponse:
 
     prior_turn = (req.prior_turn or "").strip() or None
 
+    signals: dict[str, float] = {}
+
     if _agent is not None:
         try:
             resp = _agent.handle(message, prior_turn=prior_turn)
@@ -149,6 +151,7 @@ async def analyze(req: AnalyzeRequest) -> JSONResponse:
             should_escalate = resp.escalation.should_escalate
             esc_score = resp.escalation.score
             reasons = resp.escalation.reasons
+            signals = resp.escalation.signal_breakdown or {}
             latency_ms = resp.latency_ms
         except Exception as e:
             return JSONResponse({"error": str(e)}, status_code=500)
@@ -173,6 +176,14 @@ async def analyze(req: AnalyzeRequest) -> JSONResponse:
         should_escalate = intent in ("billing_payment", "account_access") or confidence < 0.62
         esc_score = 0.72 if should_escalate else 0.18
         reasons = ["Intent requires account/billing access." if should_escalate else "Routine inquiry."]
+        # Approximate signal breakdown for keyword fallback
+        signals = {
+            "confidence":  round(1.0 - confidence, 4),
+            "sentiment":   0.30 if should_escalate else 0.05,
+            "complexity":  0.20,
+            "sensitivity": 0.80 if intent in ("billing_payment", "account_access") else 0.10,
+            "security":    0.60 if intent == "account_access" else 0.05,
+        }
         latency_ms = (time.perf_counter() - t0) * 1000
 
     return JSONResponse({
@@ -184,6 +195,7 @@ async def analyze(req: AnalyzeRequest) -> JSONResponse:
         "should_escalate": should_escalate,
         "esc_score": esc_score,
         "reasons": reasons,
+        "signals": signals,
         "latency_ms": latency_ms,
     })
 
@@ -887,6 +899,9 @@ HTML = r"""<!DOCTYPE html>
     <a href="https://github.com/Aprameya05/hiver-spotify-agent" target="_blank"
        style="color:var(--muted);text-decoration:none;font-size:0.8rem;transition:color 0.2s"
        onmouseover="this.style.color='var(--cyan)'" onmouseout="this.style.color='var(--muted)'">GitHub</a>
+    <a href="/docs" target="_blank"
+       style="color:var(--muted);text-decoration:none;font-size:0.8rem;transition:color 0.2s"
+       onmouseover="this.style.color='var(--cyan)'" onmouseout="this.style.color='var(--muted)'">API Docs</a>
   </div>
 </nav>
 
@@ -964,6 +979,8 @@ HTML = r"""<!DOCTYPE html>
       <div class="examples-label">Try an example</div>
       <div class="examples" id="examples"></div>
     </div>
+
+    <div id="history-panel" style="display:none;margin-top:16px"></div>
   </div>
 
   <!-- OUTPUT -->
@@ -1067,6 +1084,57 @@ async function analyze() {
   renderResults(data, out);
 }
 
+// History of last 5 analyses
+const _history = [];
+
+function confColor(pct) {
+  if (pct >= 75) return 'var(--green2)';
+  if (pct >= 62) return 'var(--cyan)';
+  return 'var(--red)';
+}
+
+function renderSignalBars(signals) {
+  if (!signals || !Object.keys(signals).length) return '';
+  const labels = {
+    confidence: 'Confidence', sentiment: 'Sentiment',
+    complexity: 'Complexity', sensitivity: 'Sensitivity', security: 'Security'
+  };
+  return Object.entries(signals).map(([k, v]) => {
+    const pct = Math.round(v * 100);
+    const color = pct > 50 ? 'var(--red)' : pct > 25 ? '#f5a623' : 'var(--green2)';
+    return `
+      <div style="margin-bottom:8px">
+        <div style="display:flex;justify-content:space-between;font-family:var(--mono);font-size:0.7rem;margin-bottom:3px">
+          <span style="color:var(--muted);text-transform:uppercase;letter-spacing:0.06em">${labels[k] || k}</span>
+          <span style="color:${color}">${pct}%</span>
+        </div>
+        <div style="height:3px;background:var(--border);border-radius:2px">
+          <div style="height:100%;width:${pct}%;background:${color};border-radius:2px;transition:width 0.4s ease"></div>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function renderHistory() {
+  const hEl = document.getElementById('history-panel');
+  if (!hEl) return;
+  if (!_history.length) { hEl.style.display = 'none'; return; }
+  hEl.style.display = 'block';
+  hEl.innerHTML = '<div class="panel-header" style="margin-bottom:8px">Recent</div>' +
+    _history.slice().reverse().map(h => `
+      <div onclick="replayHistory(${JSON.stringify(h.msg).replace(/"/g,'&quot;')})"
+           style="padding:8px 10px;border:1px solid var(--border);border-radius:6px;margin-bottom:6px;cursor:pointer;transition:border-color 0.2s"
+           onmouseover="this.style.borderColor='var(--cyan)'" onmouseout="this.style.borderColor='var(--border)'">
+        <div style="font-family:var(--mono);font-size:0.68rem;color:var(--muted);text-transform:uppercase;margin-bottom:3px">${h.intent} &middot; ${Math.round(h.conf*100)}%</div>
+        <div style="font-size:0.8rem;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escapeHtml(h.msg)}</div>
+      </div>`).join('');
+}
+
+function replayHistory(msg) {
+  document.getElementById('msg').value = msg;
+  analyze();
+}
+
 function renderResults(d, out) {
   const confPct = Math.round(d.confidence * 100);
   const escalate = d.should_escalate;
@@ -1077,7 +1145,13 @@ function renderResults(d, out) {
   const scoreColor2 = escalate ? 'var(--red)' : 'var(--green2)';
   const cardGlow = escalate ? 'glow-red' : 'glow-green';
   const latency = Math.round(d.latency_ms);
-  const signals = (d.reasons || []).join('\n');
+  const barColor = confColor(confPct);
+  const replyId = 'reply-' + Date.now();
+
+  // Push to history
+  _history.push({ msg: document.getElementById('msg').value.trim(), intent: d.intent_label, conf: d.confidence });
+  if (_history.length > 5) _history.shift();
+  renderHistory();
 
   out.innerHTML = `
     <!-- Intent card -->
@@ -1088,15 +1162,22 @@ function renderResults(d, out) {
           <div class="intent-icon">${d.intent_icon}</div>
           ${d.intent_label}
         </div>
-        <div class="confidence-badge">${confPct}%</div>
+        <div class="confidence-badge" style="color:${barColor};border-color:${barColor}">${confPct}%</div>
       </div>
-      <div class="conf-bar"><div class="conf-fill" style="width:${confPct}%"></div></div>
+      <div class="conf-bar"><div class="conf-fill" style="width:${confPct}%;background:${barColor}"></div></div>
     </div>
 
     <!-- Reply card -->
     <div class="card">
-      <div class="card-label">Draft Reply</div>
-      <div class="reply-text">${escapeHtml(d.reply)}</div>
+      <div class="card-label" style="display:flex;justify-content:space-between;align-items:center">
+        Draft Reply
+        <button onclick="copyReply('${replyId}')"
+          style="background:none;border:1px solid var(--border);border-radius:4px;color:var(--muted);font-family:var(--mono);font-size:0.65rem;padding:2px 8px;cursor:pointer;transition:all 0.2s"
+          onmouseover="this.style.borderColor='var(--cyan)';this.style.color='var(--cyan)'"
+          onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--muted)'"
+          id="copy-btn-${replyId}">copy</button>
+      </div>
+      <div class="reply-text" id="${replyId}">${escapeHtml(d.reply)}</div>
     </div>
 
     <!-- Escalation card -->
@@ -1112,10 +1193,11 @@ function renderResults(d, out) {
       <div class="score-bar"><div class="score-fill ${scoreColor}" style="width:${Math.round(d.esc_score*100)}%"></div></div>
     </div>
 
-    <!-- Signals -->
+    <!-- Signal breakdown -->
     <div class="card">
       <div class="card-label">Signal Breakdown</div>
-      <div class="signals">
+      ${renderSignalBars(d.signals)}
+      <div class="signals" style="margin-top:8px">
         ${(d.reasons || []).map(r => `<div class="signal-row">${escapeHtml(r)}</div>`).join('')}
       </div>
     </div>
@@ -1131,8 +1213,17 @@ function renderResults(d, out) {
   `;
 }
 
+function copyReply(id) {
+  const text = document.getElementById(id)?.textContent || '';
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = document.getElementById('copy-btn-' + id);
+    if (btn) { btn.textContent = 'copied!'; btn.style.color = 'var(--green2)'; btn.style.borderColor = 'var(--green2)'; }
+    setTimeout(() => { if (btn) { btn.textContent = 'copy'; btn.style.color = 'var(--muted)'; btn.style.borderColor = 'var(--border)'; }}, 1500);
+  });
+}
+
 function escapeHtml(t) {
-  return t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  return String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 }
 </script>
 </body>
