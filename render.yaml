@@ -4,8 +4,8 @@ services:
     env: python
     plan: free
     buildCommand: pip install -r requirements-web.txt
-    startCommand: python app.py
+    startCommand: uvicorn app_web:app --host 0.0.0.0 --port $PORT
     envVars:
       - key: GROQ_API_KEY
         sync: false   # set in Render dashboard, not stored in repo
-    healthCheckPath: /
+    healthCheckPath: /health

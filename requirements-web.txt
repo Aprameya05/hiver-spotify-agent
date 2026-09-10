@@ -1,11 +1,6 @@
+# Web demo dependencies -- lightweight, no torch/sentence-transformers
 fastapi>=0.110.0
 uvicorn>=0.29.0
-gradio>=4.0.0
-sentence-transformers>=2.2.0
-scikit-learn>=1.3.0
 pyyaml>=6.0
-textblob>=0.17.0
-joblib>=1.3.0
-numpy>=1.24.0
 groq>=0.4.0
 openai>=1.0.0

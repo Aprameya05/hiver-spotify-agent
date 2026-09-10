@@ -193,75 +193,68 @@ HTML = r"""<!DOCTYPE html>
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Spotify Support Agent // Autonomous AI Triage</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<title>Spotify Support Agent</title>
 <style>
   :root {
-    --bg:         #050c17;
-    --bg-surface: rgba(9, 20, 39, 0.65);
-    --bg-card:    rgba(10, 24, 48, 0.75);
-    --bg-card-alt:rgba(6, 15, 30, 0.85);
-    --border:     rgba(0, 200, 255, 0.16);
-    --border-hover: rgba(0, 200, 255, 0.4);
-    --border-glow:rgba(0, 200, 255, 0.6);
-    --cyan:       #00c8ff;
-    --cyan-dim:   rgba(0, 200, 255, 0.12);
-    --cyan-glow:  rgba(0, 200, 255, 0.35);
-    --green:      #1DB954;
-    --green-glow: rgba(29, 185, 84, 0.35);
-    --green-dim:  rgba(29, 185, 84, 0.12);
-    --red:        #ff3b52;
-    --red-glow:   rgba(255, 59, 82, 0.35);
-    --red-dim:    rgba(255, 59, 82, 0.12);
-    --text:       #e6f0fc;
-    --text-sub:   #a5bfdb;
-    --muted:      #577399;
-    --mono:       'JetBrains Mono', monospace;
-    --sans:       'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    --bg:       #050c17;
+    --bg2:      #0a1628;
+    --bg3:      #0f1f38;
+    --border:   rgba(0,180,255,0.12);
+    --border2:  rgba(0,180,255,0.22);
+    --cyan:     #00c8ff;
+    --cyan2:    #0090d4;
+    --green:    #1DB954;
+    --green2:   #00ff88;
+    --red:      #ff3b52;
+    --text:     #e0eaf8;
+    --muted:    #5a7599;
+    --mono:     'SF Mono', 'Fira Code', monospace;
   }
 
   * { box-sizing: border-box; margin: 0; padding: 0; }
 
   body {
-    background-color: var(--bg);
+    background: var(--bg);
     color: var(--text);
-    font-family: var(--sans);
+    font-family: 'Inter', system-ui, sans-serif;
     min-height: 100vh;
     overflow-x: hidden;
-    position: relative;
-    line-height: 1.5;
   }
 
-  /* Grid & star dust overlay */
+  /* Starfield background */
   body::before {
     content: '';
     position: fixed;
     inset: 0;
     background-image:
-      radial-gradient(1.5px 1.5px at 15% 15%, rgba(0, 200, 255, 0.4) 0%, transparent 100%),
-      radial-gradient(1.5px 1.5px at 45% 65%, rgba(0, 200, 255, 0.25) 0%, transparent 100%),
-      radial-gradient(1.5px 1.5px at 75% 25%, rgba(255, 255, 255, 0.3) 0%, transparent 100%),
-      radial-gradient(1.5px 1.5px at 85% 80%, rgba(0, 200, 255, 0.35) 0%, transparent 100%),
-      radial-gradient(2px 2px at 30% 90%, rgba(29, 185, 84, 0.3) 0%, transparent 100%);
+      radial-gradient(1px 1px at 10% 20%, rgba(0,200,255,0.35) 0%, transparent 100%),
+      radial-gradient(1px 1px at 25% 60%, rgba(0,200,255,0.2) 0%, transparent 100%),
+      radial-gradient(1px 1px at 50% 10%, rgba(255,255,255,0.25) 0%, transparent 100%),
+      radial-gradient(1px 1px at 70% 80%, rgba(0,200,255,0.3) 0%, transparent 100%),
+      radial-gradient(1px 1px at 85% 35%, rgba(255,255,255,0.2) 0%, transparent 100%),
+      radial-gradient(1px 1px at 95% 70%, rgba(0,200,255,0.25) 0%, transparent 100%),
+      radial-gradient(2px 2px at 15% 85%, rgba(0,200,255,0.15) 0%, transparent 100%),
+      radial-gradient(1px 1px at 40% 45%, rgba(255,255,255,0.15) 0%, transparent 100%),
+      radial-gradient(1px 1px at 60% 30%, rgba(0,144,212,0.2) 0%, transparent 100%),
+      radial-gradient(1px 1px at 80% 55%, rgba(255,255,255,0.1) 0%, transparent 100%);
     pointer-events: none;
     z-index: 0;
   }
 
+  /* Grid overlay */
   body::after {
     content: '';
     position: fixed;
     inset: 0;
     background-image:
-      linear-gradient(rgba(0, 200, 255, 0.035) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(0, 200, 255, 0.035) 1px, transparent 1px);
-    background-size: 48px 48px;
+      linear-gradient(rgba(0,144,212,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,144,212,0.03) 1px, transparent 1px);
+    background-size: 60px 60px;
     pointer-events: none;
     z-index: 0;
   }
 
-  /* ---- NAVIGATION ---- */
+  /* ---- NAV ---- */
   nav {
     position: sticky;
     top: 0;
@@ -269,479 +262,316 @@ HTML = r"""<!DOCTYPE html>
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 0 48px;
-    height: 64px;
-    background: rgba(5, 12, 23, 0.82);
+    padding: 0 40px;
+    height: 60px;
+    background: rgba(5,12,23,0.9);
     backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
     border-bottom: 1px solid var(--border);
   }
 
   .nav-logo {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 10px;
     font-weight: 700;
-    font-size: 1.05rem;
-    letter-spacing: -0.01em;
-    color: #fff;
+    font-size: 1rem;
+    letter-spacing: 0.02em;
   }
 
-  .nav-logo svg {
-    color: var(--green);
-    filter: drop-shadow(0 0 8px rgba(29, 185, 84, 0.6));
-  }
-
-  .nav-tag {
-    font-family: var(--mono);
-    font-size: 0.65rem;
-    padding: 2px 8px;
-    background: rgba(0, 200, 255, 0.1);
-    border: 1px solid rgba(0, 200, 255, 0.3);
-    border-radius: 4px;
-    color: var(--cyan);
-    letter-spacing: 0.05em;
-  }
+  .nav-logo svg { color: var(--green); }
 
   .nav-right {
     display: flex;
     align-items: center;
-    gap: 20px;
+    gap: 24px;
+    font-size: 0.82rem;
+    color: var(--muted);
   }
 
   .live-badge {
-    display: inline-flex;
+    display: flex;
     align-items: center;
-    gap: 8px;
-    background: rgba(0, 200, 255, 0.06);
-    border: 1px solid rgba(0, 200, 255, 0.25);
-    border-radius: 9999px;
-    padding: 6px 14px;
+    gap: 6px;
+    background: rgba(0,200,255,0.08);
+    border: 1px solid rgba(0,200,255,0.2);
+    border-radius: 20px;
+    padding: 4px 12px;
     font-family: var(--mono);
     font-size: 0.72rem;
     color: var(--cyan);
-    letter-spacing: 0.06em;
-    box-shadow: 0 0 14px rgba(0, 200, 255, 0.1);
+    letter-spacing: 0.05em;
   }
 
   .live-dot {
-    width: 7px;
-    height: 7px;
+    width: 6px; height: 6px;
     border-radius: 50%;
-    background: var(--green);
-    box-shadow: 0 0 10px var(--green);
-    animation: livePulse 2s infinite ease-in-out;
+    background: var(--green2);
+    animation: pulse 1.8s ease-in-out infinite;
   }
 
-  @keyframes livePulse {
-    0%, 100% { opacity: 1; transform: scale(1); box-shadow: 0 0 6px var(--green); }
-    50% { opacity: 0.4; transform: scale(0.85); box-shadow: 0 0 14px var(--green); }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(0,255,136,0.6); }
+    50%       { opacity: 0.5; box-shadow: 0 0 0 5px rgba(0,255,136,0); }
   }
 
-  /* ---- HERO SECTION ---- */
-  .hero-wrapper {
+  /* ---- HERO ---- */
+  .hero {
     position: relative;
+    z-index: 1;
+    padding: 64px 40px 0;
     max-width: 1200px;
     margin: 0 auto;
-    padding: 72px 32px 36px;
-    text-align: center;
-    z-index: 1;
   }
 
-  /* Pulsing cyan glow orb */
-  .hero-glow-orb {
-    position: absolute;
-    top: 20px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 620px;
-    height: 380px;
-    background: radial-gradient(circle, rgba(0, 200, 255, 0.24) 0%, rgba(0, 144, 212, 0.1) 48%, transparent 72%);
-    filter: blur(75px);
-    border-radius: 50%;
-    pointer-events: none;
-    z-index: -1;
-    animation: orbPulse 5.5s ease-in-out infinite alternate;
-  }
-
-  @keyframes orbPulse {
-    0% { transform: translateX(-50%) scale(0.88); opacity: 0.55; }
-    50% { transform: translateX(-50%) scale(1.12); opacity: 0.95; }
-    100% { transform: translateX(-50%) scale(0.92); opacity: 0.65; }
-  }
-
-  .hero-eyebrow {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
+  .hero-tag {
     font-family: var(--mono);
     font-size: 0.72rem;
-    letter-spacing: 0.14em;
-    color: var(--cyan);
+    letter-spacing: 0.15em;
+    color: var(--muted);
     text-transform: uppercase;
-    background: rgba(0, 200, 255, 0.08);
-    border: 1px solid rgba(0, 200, 255, 0.28);
-    padding: 5px 14px;
-    border-radius: 9999px;
-    margin-bottom: 22px;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
   }
 
-  .hero-eyebrow::before {
+  .hero-tag::before {
     content: '';
-    width: 6px;
-    height: 6px;
-    background: var(--cyan);
-    border-radius: 50%;
-    box-shadow: 0 0 8px var(--cyan);
-  }
-
-  h1.hero-title {
-    font-size: clamp(2.4rem, 5.2vw, 4.1rem);
-    font-weight: 800;
-    line-height: 1.08;
-    letter-spacing: -0.03em;
-    color: #ffffff;
-    margin-bottom: 20px;
-    text-shadow: 0 4px 24px rgba(0, 0, 0, 0.6);
-  }
-
-  h1.hero-title .glow-text {
-    background: linear-gradient(135deg, #00c8ff 0%, #1DB954 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    text-shadow: none;
     display: inline-block;
+    width: 28px;
+    height: 1px;
+    background: var(--muted);
   }
 
-  .hero-subtitle {
-    font-size: 1.05rem;
-    color: var(--text-sub);
-    max-width: 640px;
-    margin: 0 auto 36px;
-    line-height: 1.65;
-  }
-
-  /* 4 Metric Chips */
-  .metric-chips {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 14px;
-    margin-bottom: 24px;
-  }
-
-  .metric-chip {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    padding: 8px 18px;
-    background: rgba(0, 200, 255, 0.05);
-    border: 1px solid rgba(0, 200, 255, 0.38);
-    border-radius: 9999px;
-    font-family: var(--mono);
-    font-size: 0.82rem;
-    font-weight: 600;
-    color: #e0f2fe;
-    box-shadow: 0 0 16px rgba(0, 200, 255, 0.12), inset 0 0 10px rgba(0, 200, 255, 0.05);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
-  }
-
-  .metric-chip:hover {
-    transform: translateY(-2px);
-    border-color: var(--cyan);
-    box-shadow: 0 0 24px rgba(0, 200, 255, 0.32);
-  }
-
-  .metric-chip .chip-dot {
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-    background: var(--cyan);
-    box-shadow: 0 0 6px var(--cyan);
-  }
-
-  /* ---- PIPELINE TRACKER ---- */
-  .pipeline-container {
-    position: relative;
-    max-width: 1120px;
-    margin: 0 auto 36px;
-    padding: 0 24px;
-    z-index: 1;
-  }
-
-  .pipeline-card {
-    background: var(--bg-surface);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border: 1px solid var(--border);
-    border-radius: 16px;
-    padding: 20px 28px;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.06);
-  }
-
-  .pipeline-header-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
+  h1 {
+    font-size: clamp(2rem, 4vw, 3.2rem);
+    font-weight: 800;
+    line-height: 1.1;
+    letter-spacing: -0.02em;
     margin-bottom: 16px;
   }
 
-  .pipeline-heading {
+  h1 .accent { color: var(--green); }
+
+  .hero-sub {
+    color: var(--muted);
+    font-size: 1rem;
+    max-width: 520px;
+    line-height: 1.6;
+    margin-bottom: 40px;
+  }
+
+  /* ---- METRICS BAR ---- */
+  .metrics-bar {
+    display: flex;
+    gap: 0;
+    margin-bottom: 56px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+    max-width: 640px;
+  }
+
+  .metric-item {
+    flex: 1;
+    padding: 16px 20px;
+    border-right: 1px solid var(--border);
+  }
+  .metric-item:last-child { border-right: none; }
+
+  .metric-value {
     font-family: var(--mono);
-    font-size: 0.68rem;
-    letter-spacing: 0.14em;
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: var(--text);
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+
+  .metric-value .unit {
+    font-size: 0.75rem;
+    color: var(--cyan);
+    font-weight: 400;
+  }
+
+  .metric-label {
+    font-family: var(--mono);
+    font-size: 0.65rem;
+    letter-spacing: 0.08em;
     color: var(--muted);
     text-transform: uppercase;
-    display: flex;
-    align-items: center;
-    gap: 8px;
   }
 
-  .pipeline-heading::before {
-    content: '';
-    display: inline-block;
-    width: 14px;
-    height: 2px;
-    background: var(--cyan);
-  }
-
-  .pipeline-status-text {
-    font-family: var(--mono);
-    font-size: 0.72rem;
-    color: var(--cyan);
-    letter-spacing: 0.04em;
-  }
-
-  .pipeline-stepper {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
+  /* ---- PIPELINE VIZ ---- */
+  .pipeline-section {
     position: relative;
-  }
-
-  .step-node {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    z-index: 2;
-    transition: all 300ms ease;
-  }
-
-  .step-indicator {
-    width: 36px;
-    height: 36px;
-    border-radius: 10px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-family: var(--mono);
-    font-weight: 700;
-    font-size: 0.85rem;
-    background: var(--bg-card-alt);
-    border: 1px solid rgba(0, 200, 255, 0.18);
-    color: var(--muted);
-    transition: all 300ms ease;
-  }
-
-  .step-info {
-    display: flex;
-    flex-direction: column;
-  }
-
-  .step-name {
-    font-family: var(--mono);
-    font-size: 0.82rem;
-    font-weight: 600;
-    color: var(--muted);
-    letter-spacing: 0.04em;
-    transition: color 300ms ease;
-  }
-
-  .step-sub {
-    font-size: 0.7rem;
-    color: var(--muted);
-    transition: color 300ms ease;
-  }
-
-  /* Connecting line between steps */
-  .step-line {
-    flex: 1;
-    height: 2px;
-    background: rgba(0, 200, 255, 0.12);
-    margin: 0 14px;
-    position: relative;
-    overflow: hidden;
-    border-radius: 2px;
-  }
-
-  .step-line-fill {
-    position: absolute;
-    left: 0;
-    top: 0;
-    height: 100%;
-    width: 0%;
-    background: linear-gradient(90deg, var(--green), var(--cyan));
-    box-shadow: 0 0 8px var(--cyan);
-    transition: width 350ms ease;
-  }
-
-  /* Active stage */
-  .step-node.active .step-indicator {
-    background: rgba(0, 200, 255, 0.15);
-    border-color: var(--cyan);
-    color: #ffffff;
-    box-shadow: 0 0 20px rgba(0, 200, 255, 0.6), inset 0 0 10px rgba(0, 200, 255, 0.3);
-    animation: activeStepPulse 1.4s infinite alternate ease-in-out;
-  }
-
-  @keyframes activeStepPulse {
-    from { transform: scale(1); box-shadow: 0 0 14px rgba(0, 200, 255, 0.4); }
-    to { transform: scale(1.08); box-shadow: 0 0 24px rgba(0, 200, 255, 0.75); }
-  }
-
-  .step-node.active .step-name {
-    color: var(--cyan);
-    text-shadow: 0 0 10px rgba(0, 200, 255, 0.5);
-  }
-
-  .step-node.active .step-sub {
-    color: #c7e9ff;
-  }
-
-  /* Done stage */
-  .step-node.done .step-indicator {
-    background: rgba(29, 185, 84, 0.15);
-    border-color: var(--green);
-    color: var(--green);
-    box-shadow: 0 0 14px rgba(29, 185, 84, 0.4);
-  }
-
-  .step-node.done .step-name {
-    color: var(--green);
-  }
-
-  .step-node.done .step-sub {
-    color: var(--text-sub);
-  }
-
-  /* ---- WORKSPACE LAYOUT ---- */
-  .workspace {
-    position: relative;
-    max-width: 1120px;
-    margin: 0 auto;
-    padding: 0 24px 72px;
     z-index: 1;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 40px 48px;
   }
 
-  /* Input Card */
-  .input-card {
-    background: var(--bg-surface);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border: 1px solid var(--border);
-    border-radius: 16px;
-    padding: 24px;
-    margin-bottom: 28px;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.45);
-  }
-
-  .input-label-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
+  .pipeline-label {
+    font-family: var(--mono);
+    font-size: 0.65rem;
+    letter-spacing: 0.12em;
+    color: var(--muted);
+    text-transform: uppercase;
     margin-bottom: 12px;
   }
 
-  .input-label {
-    font-family: var(--mono);
-    font-size: 0.68rem;
-    letter-spacing: 0.12em;
-    color: var(--text-sub);
-    text-transform: uppercase;
-  }
-
-  .input-hint {
-    font-family: var(--mono);
-    font-size: 0.68rem;
-    color: var(--muted);
-  }
-
-  textarea#msg {
-    width: 100%;
-    background: rgba(4, 11, 22, 0.85);
-    border: 1px solid rgba(0, 200, 255, 0.2);
-    border-radius: 12px;
-    color: var(--text);
-    font-family: var(--sans);
-    font-size: 0.98rem;
-    line-height: 1.6;
-    padding: 16px 18px;
-    resize: vertical;
-    min-height: 110px;
-    outline: none;
-    transition: all 0.25s ease;
-    box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.5);
-  }
-
-  textarea#msg:focus {
-    border-color: var(--cyan);
-    box-shadow: 0 0 0 3px rgba(0, 200, 255, 0.15), inset 0 2px 8px rgba(0, 0, 0, 0.5);
-  }
-
-  .action-row {
+  .pipeline-track {
     display: flex;
-    justify-content: space-between;
     align-items: center;
-    margin-top: 16px;
-    gap: 16px;
-    flex-wrap: wrap;
+    gap: 0;
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 0;
+    overflow: hidden;
   }
 
-  /* Analyze Button */
+  .pipeline-stage {
+    flex: 1;
+    padding: 14px 16px;
+    border-right: 1px solid var(--border);
+    position: relative;
+    transition: background 0.3s;
+  }
+
+  .pipeline-stage:last-child { border-right: none; }
+
+  .pipeline-stage.active {
+    background: rgba(0,200,255,0.05);
+  }
+
+  .pipeline-stage.done {
+    background: rgba(29,185,84,0.04);
+  }
+
+  .ps-name {
+    font-family: var(--mono);
+    font-size: 0.65rem;
+    letter-spacing: 0.1em;
+    color: var(--muted);
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+
+  .ps-detail {
+    font-size: 0.8rem;
+    color: var(--text);
+    font-weight: 500;
+  }
+
+  .ps-status {
+    position: absolute;
+    top: 10px;
+    right: 12px;
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: var(--bg3);
+    border: 1px solid var(--border2);
+  }
+
+  .pipeline-stage.active .ps-status {
+    background: var(--cyan);
+    box-shadow: 0 0 8px var(--cyan);
+    animation: pulse 1.2s ease-in-out infinite;
+  }
+
+  .pipeline-stage.done .ps-status {
+    background: var(--green2);
+    box-shadow: 0 0 6px var(--green2);
+  }
+
+  /* ---- MAIN LAYOUT ---- */
+  .main {
+    position: relative;
+    z-index: 1;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 40px 80px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+  }
+
+  /* ---- INPUT PANEL ---- */
+  .input-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .panel-header {
+    font-family: var(--mono);
+    font-size: 0.65rem;
+    letter-spacing: 0.12em;
+    color: var(--muted);
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+
+  textarea {
+    width: 100%;
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    font-family: inherit;
+    font-size: 0.95rem;
+    line-height: 1.6;
+    padding: 16px;
+    resize: vertical;
+    min-height: 140px;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+
+  textarea::placeholder { color: var(--muted); }
+
+  textarea:focus {
+    border-color: var(--cyan2);
+    box-shadow: 0 0 0 3px rgba(0,144,212,0.15);
+  }
+
   .analyze-btn {
-    display: inline-flex;
+    display: flex;
     align-items: center;
     justify-content: center;
-    gap: 10px;
-    background: linear-gradient(135deg, #1DB954 0%, #179e46 100%);
-    color: #031308;
-    font-family: var(--sans);
+    gap: 8px;
+    background: var(--green);
+    color: #000;
     font-weight: 700;
-    font-size: 0.94rem;
-    letter-spacing: 0.02em;
-    padding: 14px 34px;
+    font-size: 0.9rem;
+    letter-spacing: 0.03em;
+    padding: 14px 28px;
     border: none;
-    border-radius: 12px;
+    border-radius: 8px;
     cursor: pointer;
-    box-shadow: 0 0 20px rgba(29, 185, 84, 0.35);
-    transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+    transition: background 0.2s, transform 0.1s, box-shadow 0.2s;
   }
 
   .analyze-btn:hover {
-    transform: scale(1.03);
-    box-shadow: 0 0 28px rgba(0, 200, 255, 0.45), 0 0 16px rgba(29, 185, 84, 0.55);
+    background: #21cf60;
+    box-shadow: 0 0 24px rgba(29,185,84,0.4);
   }
 
-  .analyze-btn:active {
-    transform: scale(0.98);
-  }
+  .analyze-btn:active { transform: scale(0.98); }
 
   .analyze-btn.loading {
-    background: rgba(29, 185, 84, 0.4);
-    color: rgba(0, 0, 0, 0.6);
+    background: rgba(29,185,84,0.4);
     pointer-events: none;
   }
 
   .analyze-btn .spinner {
     display: none;
-    width: 18px;
-    height: 18px;
-    border: 2.5px solid rgba(0, 0, 0, 0.25);
-    border-top-color: #031308;
+    width: 16px; height: 16px;
+    border: 2px solid rgba(0,0,0,0.3);
+    border-top-color: #000;
     border-radius: 50%;
-    animation: spin 0.65s linear infinite;
+    animation: spin 0.7s linear infinite;
   }
 
   .analyze-btn.loading .spinner { display: block; }
@@ -749,430 +579,262 @@ HTML = r"""<!DOCTYPE html>
 
   @keyframes spin { to { transform: rotate(360deg); } }
 
-  /* 5 Example Chips */
-  .examples-section {
-    margin-top: 18px;
-    border-top: 1px solid rgba(0, 200, 255, 0.1);
-    padding-top: 16px;
+  /* Examples */
+  .examples-label {
+    font-family: var(--mono);
+    font-size: 0.65rem;
+    letter-spacing: 0.1em;
+    color: var(--muted);
+    text-transform: uppercase;
+    margin-bottom: 8px;
   }
 
-  .examples-heading {
+  .examples {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .example-chip {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 6px 14px;
+    font-size: 0.78rem;
+    color: var(--muted);
+    cursor: pointer;
+    transition: border-color 0.2s, color 0.2s, background 0.2s;
+    white-space: nowrap;
+  }
+
+  .example-chip:hover {
+    border-color: var(--cyan2);
+    color: var(--cyan);
+    background: rgba(0,144,212,0.06);
+  }
+
+  /* ---- OUTPUT PANEL ---- */
+  .output-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px;
+    transition: border-color 0.3s;
+  }
+
+  .card.glow-cyan { border-color: rgba(0,200,255,0.35); box-shadow: 0 0 20px rgba(0,200,255,0.06); }
+  .card.glow-green { border-color: rgba(0,255,136,0.35); box-shadow: 0 0 20px rgba(29,185,84,0.06); }
+  .card.glow-red { border-color: rgba(255,59,82,0.4); box-shadow: 0 0 20px rgba(255,59,82,0.08); }
+
+  .card-label {
     font-family: var(--mono);
-    font-size: 0.66rem;
+    font-size: 0.62rem;
     letter-spacing: 0.12em;
     color: var(--muted);
     text-transform: uppercase;
     margin-bottom: 10px;
   }
 
-  .example-chips-container {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-  }
-
-  .example-pill {
-    background: rgba(10, 24, 48, 0.7);
-    border: 1px solid rgba(0, 200, 255, 0.2);
-    border-radius: 9999px;
-    padding: 7px 16px;
-    font-size: 0.8rem;
-    color: var(--text-sub);
-    cursor: pointer;
-    transition: all 0.2s ease;
-    white-space: nowrap;
-    user-select: none;
-  }
-
-  .example-pill:hover {
-    border-color: var(--cyan);
-    color: var(--cyan);
-    background: rgba(0, 200, 255, 0.1);
-    box-shadow: 0 0 14px rgba(0, 200, 255, 0.2);
-    transform: translateY(-1px);
-  }
-
-  /* ---- RESULTS SECTION: 4 GLASSMORPHISM CARDS (2x2 GRID) ---- */
-  .results-wrapper {
-    position: relative;
-    min-height: 220px;
-  }
-
-  .empty-state-box {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    background: var(--bg-surface);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border: 1px dashed rgba(0, 200, 255, 0.25);
-    border-radius: 16px;
-    padding: 56px 24px;
-    text-align: center;
-    gap: 14px;
-    color: var(--muted);
-    transition: opacity 0.3s ease;
-  }
-
-  .empty-state-icon {
-    width: 48px;
-    height: 48px;
-    border-radius: 12px;
-    background: rgba(0, 200, 255, 0.05);
-    border: 1px solid rgba(0, 200, 255, 0.18);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.4rem;
-    color: var(--cyan);
-  }
-
-  .empty-state-title {
-    font-family: var(--mono);
-    font-size: 0.84rem;
-    letter-spacing: 0.06em;
-    color: var(--text-sub);
-  }
-
-  .empty-state-sub {
-    font-size: 0.78rem;
-    color: var(--muted);
-    max-width: 420px;
-  }
-
-  /* 2x2 Grid for Results */
-  .cards-grid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 20px;
-    animation: fadeUp 0.4s ease forwards;
-  }
-
-  @keyframes fadeUp {
-    from {
-      opacity: 0;
-      transform: translateY(20px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
-
-  .glass-card {
-    background: var(--bg-surface);
-    backdrop-filter: blur(24px);
-    -webkit-backdrop-filter: blur(24px);
-    border: 1px solid var(--border);
-    border-radius: 16px;
-    padding: 22px;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.06);
-    transition: all 0.3s ease;
-    position: relative;
-    overflow: hidden;
-  }
-
-  .glass-card::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 1px;
-    background: linear-gradient(90deg, transparent, rgba(0, 200, 255, 0.3), transparent);
-  }
-
-  .card-top {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 14px;
-  }
-
-  .card-header-tag {
-    font-family: var(--mono);
-    font-size: 0.65rem;
-    letter-spacing: 0.14em;
-    color: var(--muted);
-    text-transform: uppercase;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-  }
-
-  /* Card 1: Intent */
-  .intent-card-main {
+  /* Intent row */
+  .intent-row {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 16px;
-    margin: 8px 0 16px;
+    gap: 12px;
   }
 
-  .intent-badge-group {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-  }
-
-  .intent-symbol-avatar {
-    width: 44px;
-    height: 44px;
-    border-radius: 12px;
-    background: rgba(0, 200, 255, 0.1);
-    border: 1px solid rgba(0, 200, 255, 0.35);
-    color: var(--cyan);
-    font-size: 1.25rem;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    box-shadow: 0 0 16px rgba(0, 200, 255, 0.2);
-  }
-
-  .intent-title-text {
-    font-size: 1.25rem;
-    font-weight: 700;
-    color: #ffffff;
-    letter-spacing: -0.01em;
-  }
-
-  .intent-conf-badge {
-    font-family: var(--mono);
-    font-size: 0.82rem;
-    font-weight: 700;
-    color: var(--cyan);
-    background: rgba(0, 200, 255, 0.08);
-    border: 1px solid rgba(0, 200, 255, 0.25);
-    border-radius: 9999px;
-    padding: 5px 12px;
-    box-shadow: 0 0 12px rgba(0, 200, 255, 0.15);
-  }
-
-  .fill-bar-track {
-    height: 6px;
-    background: rgba(0, 200, 255, 0.08);
-    border-radius: 9999px;
-    overflow: hidden;
-    position: relative;
-    border: 1px solid rgba(0, 200, 255, 0.15);
-  }
-
-  .fill-bar-progress {
-    height: 100%;
-    background: linear-gradient(90deg, #0090d4, #00c8ff);
-    border-radius: 9999px;
-    box-shadow: 0 0 10px #00c8ff;
-    width: 0%;
-    transition: width 0.7s cubic-bezier(0.16, 1, 0.3, 1);
-  }
-
-  .intent-footer-note {
-    margin-top: 12px;
-    font-size: 0.75rem;
-    color: var(--muted);
-    font-family: var(--mono);
-  }
-
-  /* Card 2: Reply */
-  .copy-btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    background: rgba(0, 200, 255, 0.08);
-    border: 1px solid rgba(0, 200, 255, 0.25);
-    border-radius: 6px;
-    padding: 4px 10px;
-    font-family: var(--mono);
-    font-size: 0.7rem;
-    color: var(--cyan);
-    cursor: pointer;
-    transition: all 0.2s ease;
-  }
-
-  .copy-btn:hover {
-    background: rgba(0, 200, 255, 0.18);
-    border-color: var(--cyan);
-    box-shadow: 0 0 12px rgba(0, 200, 255, 0.3);
-  }
-
-  .reply-text-box {
-    background: rgba(4, 11, 22, 0.7);
-    border: 1px solid rgba(0, 200, 255, 0.14);
-    border-radius: 10px;
-    padding: 14px 16px;
-    font-size: 0.88rem;
-    line-height: 1.6;
-    color: var(--text);
-    min-height: 105px;
-    overflow-y: auto;
-    border-left: 3px solid var(--cyan);
-  }
-
-  .reply-meta-note {
-    margin-top: 12px;
-    font-family: var(--mono);
-    font-size: 0.7rem;
-    color: var(--muted);
-    display: flex;
-    justify-content: space-between;
-  }
-
-  /* Card 3: Escalation */
-  .glass-card.esc-yes {
-    border-color: rgba(255, 59, 82, 0.45);
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4), 0 0 25px rgba(255, 59, 82, 0.15);
-  }
-
-  .glass-card.esc-no {
-    border-color: rgba(29, 185, 84, 0.45);
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4), 0 0 25px rgba(29, 185, 84, 0.15);
-  }
-
-  .esc-headline-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin: 8px 0 14px;
-  }
-
-  .esc-decision-pill {
-    font-family: var(--mono);
+  .intent-name {
     font-size: 1.05rem;
-    font-weight: 800;
-    padding: 6px 16px;
-    border-radius: 9999px;
-    letter-spacing: 0.06em;
-    display: inline-flex;
+    font-weight: 600;
+    display: flex;
     align-items: center;
     gap: 8px;
   }
 
-  .esc-decision-pill.yes {
-    background: var(--red-dim);
-    border: 1px solid rgba(255, 59, 82, 0.5);
+  .intent-icon {
+    font-size: 0.9rem;
+    width: 28px; height: 28px;
+    border-radius: 6px;
+    background: rgba(0,200,255,0.1);
+    border: 1px solid rgba(0,200,255,0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--cyan);
+  }
+
+  .confidence-badge {
+    font-family: var(--mono);
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--cyan);
+    background: rgba(0,200,255,0.08);
+    border: 1px solid rgba(0,200,255,0.18);
+    border-radius: 20px;
+    padding: 4px 12px;
+  }
+
+  .conf-bar {
+    margin-top: 10px;
+    height: 3px;
+    background: var(--bg3);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+
+  .conf-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--cyan2), var(--cyan));
+    border-radius: 2px;
+    transition: width 0.6s ease;
+  }
+
+  /* Reply */
+  .reply-text {
+    font-size: 0.9rem;
+    line-height: 1.65;
+    color: var(--text);
+  }
+
+  /* Escalation */
+  .esc-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .esc-badge {
+    font-family: var(--mono);
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    padding: 6px 14px;
+    border-radius: 20px;
+    text-transform: uppercase;
+  }
+
+  .esc-badge.escalate {
+    background: rgba(255,59,82,0.12);
+    border: 1px solid rgba(255,59,82,0.35);
     color: var(--red);
-    box-shadow: 0 0 16px var(--red-glow);
   }
 
-  .esc-decision-pill.no {
-    background: var(--green-dim);
-    border: 1px solid rgba(29, 185, 84, 0.5);
-    color: var(--green);
-    box-shadow: 0 0 16px var(--green-glow);
+  .esc-badge.auto {
+    background: rgba(0,255,136,0.08);
+    border: 1px solid rgba(0,255,136,0.25);
+    color: var(--green2);
   }
 
-  .esc-score-display {
+  .esc-score-box {
     text-align: right;
   }
 
-  .esc-score-val {
+  .esc-score-num {
     font-family: var(--mono);
-    font-size: 1.35rem;
+    font-size: 1.4rem;
     font-weight: 700;
     line-height: 1;
   }
 
-  .esc-score-sub {
+  .esc-score-label {
     font-family: var(--mono);
-    font-size: 0.62rem;
+    font-size: 0.6rem;
+    letter-spacing: 0.1em;
     color: var(--muted);
-    letter-spacing: 0.08em;
+    text-transform: uppercase;
   }
 
-  .esc-fill-progress.yes {
-    background: linear-gradient(90deg, #d32f2f, var(--red));
-    box-shadow: 0 0 10px var(--red);
-  }
-
-  .esc-fill-progress.no {
-    background: linear-gradient(90deg, #137734, var(--green));
-    box-shadow: 0 0 10px var(--green);
-  }
-
-  .reasons-tags-box {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-    margin-top: 14px;
-  }
-
-  .reason-tag {
-    font-family: var(--mono);
-    font-size: 0.68rem;
-    padding: 3px 10px;
-    border-radius: 6px;
-    background: rgba(255, 255, 255, 0.04);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    color: var(--text-sub);
-  }
-
-  /* Card 4: Signals */
-  .signals-list {
-    display: flex;
-    flex-direction: column;
-    gap: 9px;
-    margin-top: 4px;
-  }
-
-  .signal-item {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-  }
-
-  .signal-labels {
-    display: flex;
-    justify-content: space-between;
-    font-family: var(--mono);
-    font-size: 0.72rem;
-  }
-
-  .signal-name {
-    color: var(--text-sub);
-  }
-
-  .signal-val {
-    color: var(--cyan);
-    font-weight: 600;
-  }
-
-  .signal-track {
-    height: 4px;
-    background: rgba(0, 200, 255, 0.08);
-    border-radius: 9999px;
+  .score-bar {
+    margin-top: 10px;
+    height: 3px;
+    background: var(--bg3);
+    border-radius: 2px;
     overflow: hidden;
-    position: relative;
   }
 
-  .signal-bar-fill {
+  .score-fill {
     height: 100%;
-    border-radius: 9999px;
-    width: 0%;
-    transition: width 0.75s cubic-bezier(0.16, 1, 0.3, 1);
+    border-radius: 2px;
+    transition: width 0.6s ease;
   }
 
-  /* Latency row under results */
-  .metrics-footer-bar {
-    margin-top: 16px;
+  .score-fill.red { background: linear-gradient(90deg, #c0392b, var(--red)); }
+  .score-fill.green { background: linear-gradient(90deg, var(--green), var(--green2)); }
+
+  /* Signals */
+  .signals {
     display: flex;
-    justify-content: space-between;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .signal-row {
+    display: flex;
     align-items: center;
-    padding: 12px 20px;
-    background: rgba(7, 17, 34, 0.5);
-    border: 1px solid var(--border);
-    border-radius: 12px;
+    gap: 8px;
     font-family: var(--mono);
     font-size: 0.75rem;
     color: var(--muted);
   }
 
-  .metrics-footer-bar .highlight {
+  .signal-row::before {
+    content: '//';
+    color: var(--border2);
+    font-size: 0.7rem;
+  }
+
+  /* Latency */
+  .latency-row {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+  }
+
+  .latency-num {
+    font-family: var(--mono);
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: var(--text);
+    line-height: 1;
+  }
+
+  .latency-unit {
+    font-family: var(--mono);
+    font-size: 0.75rem;
     color: var(--cyan);
-    font-weight: 600;
+  }
+
+  /* Empty state */
+  .empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    gap: 12px;
+    color: var(--muted);
+    text-align: center;
+    padding: 40px;
+    border: 1px dashed var(--border);
+    border-radius: 8px;
+  }
+
+  .empty-icon {
+    font-size: 2rem;
+    opacity: 0.3;
+  }
+
+  .empty-text {
+    font-family: var(--mono);
+    font-size: 0.75rem;
+    letter-spacing: 0.08em;
+    opacity: 0.5;
   }
 
   /* ---- FOOTER ---- */
@@ -1180,555 +842,291 @@ HTML = r"""<!DOCTYPE html>
     position: relative;
     z-index: 1;
     text-align: center;
-    padding: 40px 24px 48px;
+    padding: 32px 40px;
     border-top: 1px solid var(--border);
     font-family: var(--mono);
-    font-size: 0.75rem;
+    font-size: 0.72rem;
     color: var(--muted);
     letter-spacing: 0.04em;
-    background: rgba(4, 9, 18, 0.95);
   }
 
-  footer a {
-    color: var(--cyan);
-    text-decoration: none;
-    transition: color 0.2s ease;
-  }
+  footer a { color: var(--cyan); text-decoration: none; }
+  footer a:hover { color: var(--cyan2); }
 
-  footer a:hover {
-    color: #ffffff;
-    text-decoration: underline;
-  }
-
-  /* ---- RESPONSIVE ---- */
-  @media (max-width: 900px) {
+  /* Responsive */
+  @media (max-width: 800px) {
     nav { padding: 0 20px; }
-    .hero-wrapper { padding: 48px 20px 24px; }
-    .cards-grid { grid-template-columns: 1fr; }
-    .pipeline-stepper { flex-direction: column; gap: 14px; align-items: flex-start; }
-    .step-line { display: none; }
-    .pipeline-card { padding: 18px; }
+    .hero, .pipeline-section, .main { padding-left: 20px; padding-right: 20px; }
+    .main { grid-template-columns: 1fr; }
+    h1 { font-size: 1.8rem; }
   }
 </style>
 </head>
 <body>
 
-<!-- TOP NAV -->
+<!-- NAV -->
 <nav>
   <div class="nav-logo">
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-      <circle cx="12" cy="12" r="11" stroke="currentColor" stroke-width="1.5"/>
-      <path d="M7 14.5C9.7 13 13.5 12.8 17.5 14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
-      <path d="M7.8 11.2C11.1 9.4 15 9.2 18.2 10.7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
-      <path d="M8.8 8C12 6.4 15.5 6.2 18 7.4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+    <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+      <circle cx="11" cy="11" r="10.5" stroke="currentColor" stroke-width="1"/>
+      <path d="M6 13.5C8.5 12 12 11.8 16 13" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+      <path d="M7 10.5C10 8.8 13.5 8.6 16.5 10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+      <path d="M8 7.5C10.5 6 13.5 5.8 16 7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
     </svg>
-    <span>Spotify Support Agent</span>
-    <span class="nav-tag">AGENTIC RAG</span>
+    Spotify Support Agent
   </div>
   <div class="nav-right">
+    <span style="display:none;color:var(--muted);font-family:var(--mono);font-size:0.75rem">93.4% intent accuracy</span>
     <div class="live-badge">
       <div class="live-dot"></div>
-      <span>SYSTEM OPERATIONAL</span>
+      SYSTEM ONLINE
     </div>
     <a href="https://github.com/Aprameya05/hiver-spotify-agent" target="_blank"
-       style="color:var(--muted); text-decoration:none; font-family:var(--mono); font-size:0.75rem; transition:color 0.2s;"
-       onmouseover="this.style.color='var(--cyan)'" onmouseout="this.style.color='var(--muted)'">
-      github/agent
-    </a>
+       style="color:var(--muted);text-decoration:none;font-size:0.8rem;transition:color 0.2s"
+       onmouseover="this.style.color='var(--cyan)'" onmouseout="this.style.color='var(--muted)'">GitHub</a>
   </div>
 </nav>
 
-<!-- HERO SECTION -->
-<div class="hero-wrapper">
-  <!-- Glowing Cyan Radial Orb -->
-  <div class="hero-glow-orb"></div>
-
-  <div class="hero-eyebrow">Next-Gen Autonomous Customer Engineering</div>
-  <h1 class="hero-title">
-    AI-powered triage.<br>
-    <span class="glow-text">Zero backlog.</span>
-  </h1>
-  <p class="hero-subtitle">
-    Sub-second intent classification, semantic retrieval over verified resolution paths,
-    and conservative risk-weighted escalation guardrails.
+<!-- HERO -->
+<div class="hero">
+  <div class="hero-tag">AI Customer Support Infrastructure</div>
+  <h1>Triage that handles<br>what your team <span class="accent">shouldn't.</span></h1>
+  <p class="hero-sub">
+    Classifies customer intent, drafts grounded replies, and decides escalation in real time.
+    Trained on 28,277 real Spotify support interactions.
   </p>
 
-  <!-- 4 Metric Chips -->
-  <div class="metric-chips">
-    <div class="metric-chip">
-      <div class="chip-dot"></div>
-      <span>93.4% accuracy</span>
+  <div class="metrics-bar">
+    <div class="metric-item">
+      <div class="metric-value">93.4<span class="unit">%</span></div>
+      <div class="metric-label">Intent Accuracy</div>
     </div>
-    <div class="metric-chip">
-      <div class="chip-dot"></div>
-      <span>4.52/5 quality</span>
+    <div class="metric-item">
+      <div class="metric-value">4.52<span class="unit">/5</span></div>
+      <div class="metric-label">LLM Judge Score</div>
     </div>
-    <div class="metric-chip">
-      <div class="chip-dot"></div>
-      <span>28k responses indexed</span>
+    <div class="metric-item">
+      <div class="metric-value">28k</div>
+      <div class="metric-label">QA Pairs Indexed</div>
     </div>
-    <div class="metric-chip">
-      <div class="chip-dot"></div>
-      <span>7 intents</span>
-    </div>
-  </div>
-</div>
-
-<!-- PIPELINE TRACKER -->
-<div class="pipeline-container">
-  <div class="pipeline-card">
-    <div class="pipeline-header-row">
-      <div class="pipeline-heading">Execution Pipeline Tracker</div>
-      <div class="pipeline-status-text" id="pipeline-status">AWAITING CUSTOMER INTAKE</div>
-    </div>
-    <div class="pipeline-stepper">
-      <!-- Stage 1: Classify -->
-      <div class="step-node" id="stage-1">
-        <div class="step-indicator" id="stage-ind-1">1</div>
-        <div class="step-info">
-          <div class="step-name">1 Classify</div>
-          <div class="step-sub">Intent Classifier</div>
-        </div>
-      </div>
-      <div class="step-line"><div class="step-line-fill" id="step-line-1"></div></div>
-
-      <!-- Stage 2: Generate -->
-      <div class="step-node" id="stage-2">
-        <div class="step-indicator" id="stage-ind-2">2</div>
-        <div class="step-info">
-          <div class="step-name">2 Generate</div>
-          <div class="step-sub">RAG & LLM Reply</div>
-        </div>
-      </div>
-      <div class="step-line"><div class="step-line-fill" id="step-line-2"></div></div>
-
-      <!-- Stage 3: Escalate -->
-      <div class="step-node" id="stage-3">
-        <div class="step-indicator" id="stage-ind-3">3</div>
-        <div class="step-info">
-          <div class="step-name">3 Escalate</div>
-          <div class="step-sub">5-Signal Risk Fusion</div>
-        </div>
-      </div>
-      <div class="step-line"><div class="step-line-fill" id="step-line-3"></div></div>
-
-      <!-- Stage 4: Output -->
-      <div class="step-node" id="stage-4">
-        <div class="step-indicator" id="stage-ind-4">4</div>
-        <div class="step-info">
-          <div class="step-name">4 Output</div>
-          <div class="step-sub">Triage & Dispatch</div>
-        </div>
-      </div>
+    <div class="metric-item">
+      <div class="metric-value">7</div>
+      <div class="metric-label">Intent Classes</div>
     </div>
   </div>
 </div>
 
-<!-- WORKSPACE LAYOUT -->
-<div class="workspace">
-  <!-- INPUT PANEL -->
-  <div class="input-card">
-    <div class="input-label-row">
-      <span class="input-label">Customer Inquiry Ingestion</span>
-      <span class="input-hint">Ctrl + Enter to trigger analysis</span>
+<!-- PIPELINE -->
+<div class="pipeline-section">
+  <div class="pipeline-label">Pipeline State</div>
+  <div class="pipeline-track">
+    <div class="pipeline-stage" id="ps-classify">
+      <div class="ps-name">Stage 1</div>
+      <div class="ps-detail">Intent Classifier</div>
+      <div class="ps-status"></div>
     </div>
-    <textarea id="msg" placeholder="e.g. You charged me twice this month after I cancelled, I need a refund immediately!" rows="4"></textarea>
-    
-    <div class="action-row">
-      <button class="analyze-btn" id="analyze-btn" onclick="runAnalysis()">
-        <div class="spinner"></div>
-        <span class="btn-text">Run AI Triage</span>
-      </button>
-      <div style="font-family:var(--mono); font-size:0.72rem; color:var(--muted);">
-        Target SLA: &lt; 250ms &nbsp;|&nbsp; Zero Human Lag
-      </div>
+    <div class="pipeline-stage" id="ps-generate">
+      <div class="ps-name">Stage 2</div>
+      <div class="ps-detail">Reply Generator</div>
+      <div class="ps-status"></div>
     </div>
+    <div class="pipeline-stage" id="ps-escalate">
+      <div class="ps-name">Stage 3</div>
+      <div class="ps-detail">Escalation Engine</div>
+      <div class="ps-status"></div>
+    </div>
+    <div class="pipeline-stage" id="ps-done">
+      <div class="ps-name">Output</div>
+      <div class="ps-detail" id="ps-done-text">Awaiting input</div>
+      <div class="ps-status"></div>
+    </div>
+  </div>
+</div>
 
-    <!-- 5 Example Chips -->
-    <div class="examples-section">
-      <div class="examples-heading">Try Sample Interactions</div>
-      <div class="example-chips-container" id="examples-list"></div>
+<!-- MAIN -->
+<div class="main">
+
+  <!-- INPUT -->
+  <div class="input-panel">
+    <div class="panel-header">Customer message</div>
+    <textarea id="msg" placeholder="e.g. you charged me twice this month, I want a refund NOW" rows="6"></textarea>
+    <button class="analyze-btn" id="btn" onclick="analyze()">
+      <div class="spinner"></div>
+      <span class="btn-text">Analyze Message</span>
+    </button>
+
+    <div style="margin-top:8px">
+      <div class="examples-label">Try an example</div>
+      <div class="examples" id="examples"></div>
     </div>
   </div>
 
-  <!-- RESULTS SECTION -->
-  <div class="results-wrapper" id="results-wrapper">
-    <div class="empty-state-box" id="empty-state">
-      <div class="empty-state-icon">✦</div>
-      <div class="empty-state-title">Awaiting Live Message Triage</div>
-      <div class="empty-state-sub">
-        Submit a customer query or choose an example above to trigger real-time intent extraction, grounded reply generation, and multi-signal escalation scoring.
-      </div>
+  <!-- OUTPUT -->
+  <div class="output-panel" id="output">
+    <div class="empty-state">
+      <div class="empty-icon">◎</div>
+      <div class="empty-text">Enter a customer message to analyze</div>
     </div>
-    <div id="results-container" style="display:none;"></div>
   </div>
+
 </div>
 
 <!-- FOOTER -->
 <footer>
-  Built on 28,277 Spotify support threads · Groq LLM · FAISS RAG · 2026
+  Built by <strong>Aprameya Bharadwaj</strong> &nbsp;|&nbsp; Hiver SDE Internship Take-Home 2027 &nbsp;|&nbsp;
+  <a href="https://github.com/Aprameya05/hiver-spotify-agent">GitHub</a>
 </footer>
 
 <script>
-// 5 Specific Example Queries
-const SAMPLE_MESSAGES = [
-  "You charged me twice this month after I cancelled, I need a refund immediately!",
-  "Can't log into my account on desktop and I think someone changed my email",
-  "Spotify keeps buffering and skipping every 10 seconds on iOS 18",
-  "Why was the new album removed from my region playlist?",
-  "Please add lossless audio streaming and DJ crossfade for Android"
+const EXAMPLES = [
+  "spotify keeps buffering on my iphone, tried reinstalling twice",
+  "you charged me even though i cancelled. i want a refund NOW",
+  "can't log in and i think my account was hacked",
+  "please add crossfade to the mobile app",
+  "hi how do i get a student discount for premium",
+  "the new drake album isn't showing up on spotify",
+  "app crashes every single time i open it on android",
 ];
 
-// Initialize sample chips
-const examplesContainer = document.getElementById('examples-list');
-SAMPLE_MESSAGES.forEach((sample) => {
-  const pill = document.createElement('div');
-  pill.className = 'example-pill';
-  pill.textContent = sample.length > 52 ? sample.slice(0, 50) + '...' : sample;
-  pill.title = sample;
-  pill.onclick = () => {
-    document.getElementById('msg').value = sample;
-    runAnalysis();
+// Render example chips
+const examplesEl = document.getElementById('examples');
+EXAMPLES.forEach(ex => {
+  const chip = document.createElement('div');
+  chip.className = 'example-chip';
+  chip.textContent = ex.length > 48 ? ex.slice(0, 46) + '...' : ex;
+  chip.title = ex;
+  chip.onclick = () => {
+    document.getElementById('msg').value = ex;
+    analyze();
   };
-  examplesContainer.appendChild(pill);
+  examplesEl.appendChild(chip);
 });
 
-// Shortcut Ctrl+Enter / Cmd+Enter
-document.getElementById('msg').addEventListener('keydown', (e) => {
-  if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
-    e.preventDefault();
-    runAnalysis();
-  }
+// Enter key support
+document.getElementById('msg').addEventListener('keydown', e => {
+  if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) analyze();
 });
 
-// Stepper controller
-function updateStepper(activeStep) {
-  // activeStep: 0=idle, 1=classify, 2=generate, 3=escalate, 4=done
-  const statusEl = document.getElementById('pipeline-status');
-  for (let i = 1; i <= 4; i++) {
-    const node = document.getElementById(`stage-${i}`);
-    const ind = document.getElementById(`stage-ind-${i}`);
-    const lineFill = document.getElementById(`step-line-${i}`);
-
-    node.classList.remove('active', 'done');
-    if (i < activeStep) {
-      node.classList.add('done');
-      ind.innerHTML = '✓';
-      if (lineFill) lineFill.style.width = '100%';
-    } else if (i === activeStep) {
-      node.classList.add('active');
-      ind.innerHTML = i;
-      if (lineFill) lineFill.style.width = '50%';
-    } else {
-      ind.innerHTML = i;
-      if (lineFill) lineFill.style.width = '0%';
-    }
-  }
-
-  if (activeStep === 1) statusEl.textContent = 'STAGE 1 // CLASSIFYING INTENT EMBEDDINGS';
-  else if (activeStep === 2) statusEl.textContent = 'STAGE 2 // RETRIEVING FAISS & SYNTHESIZING DRAFT';
-  else if (activeStep === 3) statusEl.textContent = 'STAGE 3 // EVALUATING RISK ESCALATION MATRIX';
-  else if (activeStep === 4) statusEl.textContent = 'PIPELINE COMPLETE // DISPATCH READY';
-  else statusEl.textContent = 'AWAITING CUSTOMER INTAKE';
+function setPipelineStage(stage) {
+  // stage: 'classify' | 'generate' | 'escalate' | 'done' | 'idle'
+  const stages = ['classify', 'generate', 'escalate', 'done'];
+  const idx = stages.indexOf(stage);
+  stages.forEach((s, i) => {
+    const el = document.getElementById('ps-' + s);
+    el.classList.remove('active', 'done');
+    if (i < idx) el.classList.add('done');
+    else if (i === idx) el.classList.add('active');
+  });
 }
 
-async function runAnalysis() {
-  const msgInput = document.getElementById('msg');
-  const messageText = msgInput.value.trim();
-  if (!messageText) {
-    msgInput.focus();
-    return;
-  }
+function setDoneText(t) {
+  document.getElementById('ps-done-text').textContent = t;
+}
 
-  const btn = document.getElementById('analyze-btn');
+async function analyze() {
+  const msg = document.getElementById('msg').value.trim();
+  if (!msg) return;
+
+  const btn = document.getElementById('btn');
   btn.classList.add('loading');
 
-  const emptyState = document.getElementById('empty-state');
-  const resultsContainer = document.getElementById('results-container');
+  const out = document.getElementById('output');
 
-  // Sequential pipeline step animation
-  updateStepper(1);
-  await new Promise(r => setTimeout(r, 300));
-  updateStepper(2);
-  await new Promise(r => setTimeout(r, 300));
-  updateStepper(3);
+  // Animate pipeline stages
+  setPipelineStage('classify');
+  await new Promise(r => setTimeout(r, 320));
+  setPipelineStage('generate');
+  await new Promise(r => setTimeout(r, 320));
+  setPipelineStage('escalate');
 
   let data;
   try {
     const res = await fetch('/analyze', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ message: messageText })
+      body: JSON.stringify({ message: msg }),
     });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
     data = await res.json();
-  } catch (err) {
+  } catch(e) {
     btn.classList.remove('loading');
-    updateStepper(0);
-    emptyState.style.display = 'flex';
-    resultsContainer.style.display = 'none';
-    emptyState.innerHTML = `
-      <div class="empty-state-icon" style="color:var(--red); border-color:rgba(255,59,82,0.3);">⚠</div>
-      <div class="empty-state-title" style="color:var(--red);">Analysis Request Failed</div>
-      <div class="empty-state-sub">Could not reach the analysis backend. Check if the server is running on port 7860. (${escapeHtml(err.message)})</div>
-    `;
+    setPipelineStage('idle');
+    out.innerHTML = '<div class="empty-state"><div class="empty-icon">⚠</div><div class="empty-text">Network error — is the server running?</div></div>';
     return;
   }
 
-  updateStepper(4);
+  setPipelineStage('done');
+  setDoneText(data.should_escalate ? 'ESCALATE' : 'AUTO-HANDLE');
   btn.classList.remove('loading');
 
-  // Render 2x2 Glassmorphism cards
-  emptyState.style.display = 'none';
-  resultsContainer.style.display = 'block';
-  renderResults(data, messageText, resultsContainer);
+  renderResults(data, out);
 }
 
-function renderResults(d, messageText, container) {
-  // Extract all endpoint JSON fields:
-  // intent, confidence, reply, should_escalate, escalation_score, reasons, signals, latency_ms
-  const intent = d.intent || 'general_inquiry';
-  const intentLabel = d.intent_label || intent.replace(/_/g, ' ').toUpperCase();
-  const intentIcon = d.intent_icon || '✦';
-  const confidence = Number(d.confidence !== undefined ? d.confidence : 0.75);
-  const confPct = Math.round(confidence * 100);
-  const replyText = d.reply || 'Thank you for reaching out to Spotify Support.';
-  const shouldEscalate = !!d.should_escalate;
-  const escScore = Number(d.escalation_score !== undefined ? d.escalation_score : (d.esc_score !== undefined ? d.esc_score : 0.2));
-  const escScorePct = Math.round(escScore * 100);
-  const reasonsList = Array.isArray(d.reasons) && d.reasons.length > 0
-    ? d.reasons
-    : [shouldEscalate ? "High priority intent requires human agent verification." : "Standard procedural resolution path."];
-  const latency = Math.round(Number(d.latency_ms !== undefined ? d.latency_ms : 45));
+function renderResults(d, out) {
+  const confPct = Math.round(d.confidence * 100);
+  const escalate = d.should_escalate;
+  const scoreColor = escalate ? 'red' : 'green';
+  const escClass = escalate ? 'escalate' : 'auto';
+  const escText = escalate ? 'ESCALATE TO HUMAN' : 'AUTO-HANDLE';
+  const scoreNum = (d.esc_score).toFixed(2);
+  const scoreColor2 = escalate ? 'var(--red)' : 'var(--green2)';
+  const cardGlow = escalate ? 'glow-red' : 'glow-green';
+  const latency = Math.round(d.latency_ms);
+  const signals = (d.reasons || []).join('\n');
 
-  // Multi-signal evaluation (5 bars: Confidence, Sentiment, Complexity, Sensitivity, Security)
-  const rawSignals = d.signals || {};
-  const signalConfigs = [
-    {
-      key: 'confidence',
-      name: 'Confidence Signal',
-      weight: '25%',
-      value: rawSignals.confidence !== undefined
-        ? Number(rawSignals.confidence)
-        : +(1 - confidence).toFixed(2),
-      color: '#00c8ff'
-    },
-    {
-      key: 'sentiment',
-      name: 'Sentiment Polarity',
-      weight: '25%',
-      value: rawSignals.sentiment !== undefined
-        ? Number(rawSignals.sentiment)
-        : (shouldEscalate ? 0.82 : 0.16),
-      color: shouldEscalate ? '#ff3b52' : '#1DB954'
-    },
-    {
-      key: 'complexity',
-      name: 'Message Complexity',
-      weight: '15%',
-      value: rawSignals.complexity !== undefined
-        ? Number(rawSignals.complexity)
-        : Math.min(1.0, +(messageText.split(/\s+/).length / 28).toFixed(2)),
-      color: '#00c8ff'
-    },
-    {
-      key: 'sensitivity',
-      name: 'Topic Sensitivity',
-      weight: '20%',
-      value: rawSignals.sensitivity !== undefined
-        ? Number(rawSignals.sensitivity)
-        : ((intent === 'billing_payment' || intent === 'account_access') ? 0.90 : 0.15),
-      color: (intent === 'billing_payment' || intent === 'account_access') ? '#ff8c00' : '#1DB954'
-    },
-    {
-      key: 'security',
-      name: 'Security / PII Markers',
-      weight: '15%',
-      value: rawSignals.security !== undefined
-        ? Number(rawSignals.security)
-        : (/(password|hack|breach|unauthorized|stolen|legal|lawyer|chargeback)/i.test(messageText) ? 0.92 : 0.05),
-      color: /(password|hack|breach|unauthorized|stolen|legal|lawyer|chargeback)/i.test(messageText) ? '#ff3b52' : '#00c8ff'
-    }
-  ];
-
-  const escClass = shouldEscalate ? 'esc-yes' : 'esc-no';
-  const escPillClass = shouldEscalate ? 'yes' : 'no';
-  const escDecisionText = shouldEscalate ? 'YES // ESCALATE TO HUMAN' : 'NO // AUTO-HANDLE';
-
-  container.innerHTML = `
-    <div class="cards-grid">
-      <!-- CARD 1: INTENT -->
-      <div class="glass-card">
-        <div>
-          <div class="card-top">
-            <div class="card-header-tag">
-              <span>●</span> STAGE 1 INTENT CLASSIFIER
-            </div>
-            <div class="intent-conf-badge">${confPct}% CONFIDENCE</div>
-          </div>
-          <div class="intent-card-main">
-            <div class="intent-badge-group">
-              <div class="intent-symbol-avatar">${intentIcon}</div>
-              <div>
-                <div class="intent-title-text">${escapeHtml(intentLabel)}</div>
-                <div style="font-family:var(--mono); font-size:0.7rem; color:var(--muted);">${escapeHtml(intent)}</div>
-              </div>
-            </div>
-          </div>
+  out.innerHTML = `
+    <!-- Intent card -->
+    <div class="card glow-cyan">
+      <div class="card-label">Detected Intent</div>
+      <div class="intent-row">
+        <div class="intent-name">
+          <div class="intent-icon">${d.intent_icon}</div>
+          ${d.intent_label}
         </div>
-        <div>
-          <div class="fill-bar-track">
-            <div class="fill-bar-progress" id="conf-bar-fill"></div>
-          </div>
-          <div class="intent-footer-note">
-            Indexed Model: all-mpnet-base-v2 &bull; Nearest Centroid Match
-          </div>
+        <div class="confidence-badge">${confPct}%</div>
+      </div>
+      <div class="conf-bar"><div class="conf-fill" style="width:${confPct}%"></div></div>
+    </div>
+
+    <!-- Reply card -->
+    <div class="card">
+      <div class="card-label">Draft Reply</div>
+      <div class="reply-text">${escapeHtml(d.reply)}</div>
+    </div>
+
+    <!-- Escalation card -->
+    <div class="card ${cardGlow}">
+      <div class="card-label">Escalation Decision</div>
+      <div class="esc-row">
+        <span class="esc-badge ${escClass}">${escText}</span>
+        <div class="esc-score-box">
+          <div class="esc-score-num" style="color:${scoreColor2}">${scoreNum}</div>
+          <div class="esc-score-label">ESC SCORE</div>
         </div>
       </div>
+      <div class="score-bar"><div class="score-fill ${scoreColor}" style="width:${Math.round(d.esc_score*100)}%"></div></div>
+    </div>
 
-      <!-- CARD 2: REPLY -->
-      <div class="glass-card">
-        <div>
-          <div class="card-top">
-            <div class="card-header-tag">
-              <span>●</span> STAGE 2 GROUNDED DRAFT REPLY
-            </div>
-            <button class="copy-btn" id="copy-reply-btn" onclick="copyReply()">
-              <span>📋</span> <span id="copy-text">Copy</span>
-            </button>
-          </div>
-          <div class="reply-text-box" id="reply-content">
-            ${escapeHtml(replyText)}
-          </div>
-        </div>
-        <div class="reply-meta-note">
-          <span>Source: FAISS Top-K Verified Response</span>
-          <span style="color:var(--cyan);">Status: Ready for Send</span>
-        </div>
-      </div>
-
-      <!-- CARD 3: ESCALATION -->
-      <div class="glass-card ${escClass}">
-        <div>
-          <div class="card-top">
-            <div class="card-header-tag">
-              <span>●</span> STAGE 3 ESCALATION DECISION
-            </div>
-            <div style="font-family:var(--mono); font-size:0.7rem; color:var(--muted);">Threshold: 0.50</div>
-          </div>
-          <div class="esc-headline-row">
-            <div class="esc-decision-pill ${escPillClass}">
-              <span>${shouldEscalate ? '⚠' : '✓'}</span>
-              <span>${escDecisionText}</span>
-            </div>
-            <div class="esc-score-display">
-              <div class="esc-score-val" style="color:${shouldEscalate ? 'var(--red)' : 'var(--green)'};">
-                ${escScore.toFixed(2)}
-              </div>
-              <div class="esc-score-sub">RISK SCORE</div>
-            </div>
-          </div>
-          <div class="fill-bar-track">
-            <div class="fill-bar-progress ${shouldEscalate ? 'esc-fill-progress yes' : 'esc-fill-progress no'}" id="esc-bar-fill"></div>
-          </div>
-        </div>
-        <div>
-          <div class="reasons-tags-box">
-            ${reasonsList.map(r => `<span class="reason-tag"># ${escapeHtml(r)}</span>`).join('')}
-          </div>
-        </div>
-      </div>
-
-      <!-- CARD 4: SIGNALS -->
-      <div class="glass-card">
-        <div>
-          <div class="card-top">
-            <div class="card-header-tag">
-              <span>●</span> 5-SIGNAL FUSION BREAKDOWN
-            </div>
-            <div style="font-family:var(--mono); font-size:0.7rem; color:var(--cyan);">Weights &bull; 100%</div>
-          </div>
-          <div class="signals-list">
-            ${signalConfigs.map((sig, idx) => `
-              <div class="signal-item">
-                <div class="signal-labels">
-                  <span class="signal-name">${escapeHtml(sig.name)} <span style="color:var(--muted); font-size:0.65rem;">(${sig.weight})</span></span>
-                  <span class="signal-val">${Math.round(sig.value * 100)}%</span>
-                </div>
-                <div class="signal-track">
-                  <div class="signal-bar-fill" id="sig-bar-${idx}" style="background:${sig.color};"></div>
-                </div>
-              </div>
-            `).join('')}
-          </div>
-        </div>
-        <div style="margin-top:10px; font-family:var(--mono); font-size:0.68rem; color:var(--muted);">
-          Conservative Bias: Recall &gt;&gt; Precision Guardrail Active
-        </div>
+    <!-- Signals -->
+    <div class="card">
+      <div class="card-label">Signal Breakdown</div>
+      <div class="signals">
+        ${(d.reasons || []).map(r => `<div class="signal-row">${escapeHtml(r)}</div>`).join('')}
       </div>
     </div>
 
-    <!-- METRICS FOOTER BAR -->
-    <div class="metrics-footer-bar">
-      <div>
-        <span>Execution Latency: </span>
-        <span class="highlight">${latency} ms</span>
-      </div>
-      <div>
-        <span>Model Inference: </span>
-        <span class="highlight">Grounded RAG / Local Embeddings</span>
-      </div>
-      <div>
-        <span>Dispatch Action: </span>
-        <span class="highlight">${shouldEscalate ? 'Human Queue Routing' : 'Direct Bot Dispatch'}</span>
+    <!-- Latency -->
+    <div class="card">
+      <div class="card-label">Latency</div>
+      <div class="latency-row">
+        <div class="latency-num">${latency}</div>
+        <div class="latency-unit">ms end-to-end</div>
       </div>
     </div>
   `;
-
-  // Trigger progress bar animations on next tick
-  requestAnimationFrame(() => {
-    setTimeout(() => {
-      const confFill = document.getElementById('conf-bar-fill');
-      if (confFill) confFill.style.width = `${confPct}%`;
-
-      const escFill = document.getElementById('esc-bar-fill');
-      if (escFill) escFill.style.width = `${Math.min(100, Math.max(4, escScorePct))}%`;
-
-      signalConfigs.forEach((sig, idx) => {
-        const bar = document.getElementById(`sig-bar-${idx}`);
-        if (bar) bar.style.width = `${Math.min(100, Math.max(3, Math.round(sig.value * 100)))}%`;
-      });
-    }, 40);
-  });
 }
 
-// Copy button function
-function copyReply() {
-  const replyBox = document.getElementById('reply-content');
-  if (!replyBox) return;
-  const text = replyBox.innerText;
-  navigator.clipboard.writeText(text).then(() => {
-    const copyText = document.getElementById('copy-text');
-    const copyBtn = document.getElementById('copy-reply-btn');
-    copyText.textContent = 'Copied!';
-    copyBtn.style.borderColor = 'var(--green)';
-    copyBtn.style.color = 'var(--green)';
-    setTimeout(() => {
-      copyText.textContent = 'Copy';
-      copyBtn.style.borderColor = '';
-      copyBtn.style.color = '';
-    }, 2000);
-  });
-}
-
-function escapeHtml(str) {
-  if (!str) return '';
-  return String(str)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#039;');
+function escapeHtml(t) {
+  return t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 }
 </script>
 </body>
