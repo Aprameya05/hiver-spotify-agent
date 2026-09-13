@@ -141,6 +141,7 @@ async def analyze(req: AnalyzeRequest) -> JSONResponse:
     prior_turn = (req.prior_turn or "").strip() or None
 
     signals: dict[str, float] = {}
+    scores: dict[str, float] = {}
 
     if _agent is not None:
         try:
@@ -152,6 +153,7 @@ async def analyze(req: AnalyzeRequest) -> JSONResponse:
             esc_score = resp.escalation.score
             reasons = resp.escalation.reasons
             signals = resp.escalation.signal_breakdown or {}
+            scores = resp.intent.scores or {}
             latency_ms = resp.latency_ms
         except Exception as e:
             return JSONResponse({"error": str(e)}, status_code=500)
@@ -184,6 +186,11 @@ async def analyze(req: AnalyzeRequest) -> JSONResponse:
             "sensitivity": 0.80 if intent in ("billing_payment", "account_access") else 0.10,
             "security":    0.60 if intent == "account_access" else 0.05,
         }
+        # Approximate intent scores for keyword fallback
+        all_intents = list(INTENT_LABELS.keys())
+        remaining = round((1.0 - confidence) / (len(all_intents) - 1), 4)
+        scores = {k: remaining for k in all_intents}
+        scores[intent] = round(confidence, 4)
         latency_ms = (time.perf_counter() - t0) * 1000
 
     return JSONResponse({
@@ -196,6 +203,7 @@ async def analyze(req: AnalyzeRequest) -> JSONResponse:
         "esc_score": esc_score,
         "reasons": reasons,
         "signals": signals,
+        "scores": scores,
         "latency_ms": latency_ms,
     })
 
@@ -868,6 +876,87 @@ HTML = r"""<!DOCTYPE html>
   footer a { color: var(--cyan); text-decoration: none; }
   footer a:hover { color: var(--cyan2); }
 
+  /* Char counter */
+  .char-counter {
+    font-family: var(--mono);
+    font-size: 0.65rem;
+    color: var(--muted);
+    text-align: right;
+    margin-top: 4px;
+    transition: color 0.2s;
+  }
+  .char-counter.warn { color: #f5a623; }
+  .char-counter.over { color: var(--red); }
+
+  /* Intent distribution chart */
+  .intent-dist {
+    margin-top: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+  .idist-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: var(--mono);
+    font-size: 0.68rem;
+  }
+  .idist-label {
+    width: 130px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    flex-shrink: 0;
+  }
+  .idist-label.top { color: var(--cyan); }
+  .idist-track {
+    flex: 1;
+    height: 4px;
+    background: var(--bg3);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+  .idist-fill {
+    height: 100%;
+    border-radius: 2px;
+    transition: width 0.5s ease;
+  }
+  .idist-pct {
+    width: 32px;
+    text-align: right;
+    color: var(--muted);
+    flex-shrink: 0;
+  }
+  .idist-pct.top { color: var(--cyan); }
+
+  /* Export btn */
+  .export-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    background: none;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--muted);
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.05em;
+    padding: 8px 16px;
+    cursor: pointer;
+    transition: all 0.2s;
+    width: 100%;
+  }
+  .export-btn:hover {
+    border-color: var(--cyan2);
+    color: var(--cyan);
+    background: rgba(0,144,212,0.06);
+  }
+
   /* Responsive */
   @media (max-width: 800px) {
     nav { padding: 0 20px; }
@@ -967,7 +1056,8 @@ HTML = r"""<!DOCTYPE html>
   <!-- INPUT -->
   <div class="input-panel">
     <div class="panel-header">Customer message</div>
-    <textarea id="msg" placeholder="e.g. you charged me twice this month, I want a refund NOW" rows="6"></textarea>
+    <textarea id="msg" placeholder="e.g. you charged me twice this month, I want a refund NOW" rows="6" oninput="updateCharCounter(this,'msg-counter',280)"></textarea>
+    <div class="char-counter" id="msg-counter">0 / 280</div>
     <div class="panel-header" style="margin-top:12px;font-size:0.8rem;opacity:0.7">Prior turn <span style="font-weight:400;opacity:0.6">(optional -- paste the previous message to resolve follow-up ambiguity)</span></div>
     <textarea id="prior" placeholder="e.g. my account got locked and I can't reset my password" rows="3" style="margin-top:4px"></textarea>
     <button class="analyze-btn" id="btn" onclick="analyze()">
@@ -1000,6 +1090,90 @@ HTML = r"""<!DOCTYPE html>
 </footer>
 
 <script>
+// ---- Animated hero metric counters ----
+function animateCounter(el, target, decimals, suffix, duration) {
+  const start = performance.now();
+  const update = (now) => {
+    const t = Math.min(1, (now - start) / duration);
+    const ease = 1 - Math.pow(1 - t, 3);
+    const val = (target * ease).toFixed(decimals);
+    el.innerHTML = val + (suffix ? '<span class="unit">' + suffix + '</span>' : '');
+    if (t < 1) requestAnimationFrame(update);
+  };
+  requestAnimationFrame(update);
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  const counters = [
+    { sel: '.metrics-bar .metric-item:nth-child(1) .metric-value', val: 93.4, dec: 1, suf: '%' },
+    { sel: '.metrics-bar .metric-item:nth-child(2) .metric-value', val: 4.52, dec: 2, suf: '/5' },
+    { sel: '.metrics-bar .metric-item:nth-child(3) .metric-value', val: 28, dec: 0, suf: 'k' },
+    { sel: '.metrics-bar .metric-item:nth-child(4) .metric-value', val: 7, dec: 0, suf: '' },
+  ];
+  setTimeout(() => {
+    counters.forEach(c => {
+      const el = document.querySelector(c.sel);
+      if (el) animateCounter(el, c.val, c.dec, c.suf, 1400);
+    });
+  }, 200);
+});
+
+// ---- Character counter ----
+function updateCharCounter(ta, counterId, max) {
+  const len = ta.value.length;
+  const el = document.getElementById(counterId);
+  if (!el) return;
+  el.textContent = len + ' / ' + max;
+  el.className = 'char-counter' + (len > max ? ' over' : len > max * 0.85 ? ' warn' : '');
+}
+
+// ---- Typewriter effect ----
+function typewriterReply(id, text) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.textContent = '';
+  let i = 0;
+  const speed = Math.max(8, Math.min(22, Math.round(4000 / text.length)));
+  const tick = () => {
+    if (i < text.length) { el.textContent += text[i++]; tick._t = setTimeout(tick, speed); }
+  };
+  tick();
+}
+
+// ---- Intent distribution chart ----
+function renderIntentChart(scores, topIntent) {
+  if (!scores || !Object.keys(scores).length) return '';
+  const LABELS = {
+    playback_issue: 'Playback', account_access: 'Account', billing_payment: 'Billing',
+    content_unavailable: 'Content', app_bug: 'App Bug', feature_request: 'Feature Req',
+    general_inquiry: 'General',
+  };
+  const sorted = Object.entries(scores).sort((a, b) => b[1] - a[1]);
+  const rows = sorted.map(([k, v]) => {
+    const pct = Math.round(v * 100);
+    const isTop = k === topIntent;
+    const fill = isTop ? 'var(--cyan)' : 'var(--bg3)';
+    const fillActive = isTop ? 'linear-gradient(90deg,var(--cyan2),var(--cyan))' : 'rgba(255,255,255,0.08)';
+    return `<div class="idist-row">
+      <div class="idist-label${isTop?' top':''}">${LABELS[k]||k}</div>
+      <div class="idist-track"><div class="idist-fill" style="width:${pct}%;background:${fillActive}"></div></div>
+      <div class="idist-pct${isTop?' top':''}">${pct}%</div>
+    </div>`;
+  }).join('');
+  return `<div class="intent-dist">${rows}</div>`;
+}
+
+// ---- JSON export ----
+let _lastResult = null;
+function exportJSON() {
+  if (!_lastResult) return;
+  const blob = new Blob([JSON.stringify(_lastResult, null, 2)], {type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'analysis_' + Date.now() + '.json';
+  a.click();
+}
+
 const EXAMPLES = [
   "spotify keeps buffering on my iphone, tried reinstalling twice",
   "you charged me even though i cancelled. i want a refund NOW",
@@ -1136,6 +1310,7 @@ function replayHistory(msg) {
 }
 
 function renderResults(d, out) {
+  _lastResult = d;
   const confPct = Math.round(d.confidence * 100);
   const escalate = d.should_escalate;
   const scoreColor = escalate ? 'red' : 'green';
@@ -1165,6 +1340,7 @@ function renderResults(d, out) {
         <div class="confidence-badge" style="color:${barColor};border-color:${barColor}">${confPct}%</div>
       </div>
       <div class="conf-bar"><div class="conf-fill" style="width:${confPct}%;background:${barColor}"></div></div>
+      ${renderIntentChart(d.scores, d.intent)}
     </div>
 
     <!-- Reply card -->
@@ -1177,7 +1353,7 @@ function renderResults(d, out) {
           onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--muted)'"
           id="copy-btn-${replyId}">copy</button>
       </div>
-      <div class="reply-text" id="${replyId}">${escapeHtml(d.reply)}</div>
+      <div class="reply-text" id="${replyId}"></div>
     </div>
 
     <!-- Escalation card -->
@@ -1210,7 +1386,15 @@ function renderResults(d, out) {
         <div class="latency-unit">ms end-to-end</div>
       </div>
     </div>
+
+    <!-- Export -->
+    <button class="export-btn" onclick="exportJSON()">
+      ↓ &nbsp;Export full analysis as JSON
+    </button>
   `;
+
+  // Typewriter for reply (after DOM is set)
+  setTimeout(() => typewriterReply(replyId, d.reply), 50);
 }
 
 function copyReply(id) {
