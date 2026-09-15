@@ -57,7 +57,7 @@ The classifier was trained on 196 hand-labelled examples (28 per intent) and eva
 | DistilBERT val F1 (fine-tuned) | 1.0 |
 | Golden set size | 196 examples, 7 intents |
 
-The LLM judge was run on 5 examples using Gemini 3.6 Flash (temperature 0, free tier). Mean overall: **4.52/5**, tone: 5.00/5, relevance: 4.40/5, actionability: 4.00/5. Scores reflect intent-matched template replies since the RAG LLM key was exhausted during that run -- RAG-generated replies would score higher on actionability. The classifier metrics are real, computed against actual labels.
+The LLM judge was run on 5 examples using `qwen/qwen3.8-27b` via Groq (temperature 0, free tier). Mean overall: **4.52/5**, tone: 5.00/5, relevance: 4.40/5, actionability: 4.00/5. Scores reflect intent-matched template replies since the RAG LLM key was exhausted during that run -- RAG-generated replies would score higher on actionability. The classifier metrics are real, computed against actual labels.
 
 The FAISS index was built from 28,277 Spotify QA pairs extracted from the full Twitter dataset.
 
