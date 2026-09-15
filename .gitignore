@@ -42,3 +42,5 @@ Thumbs.db
 # IDE
 .vscode/
 .idea/
+*.jsonl
+logs/
