@@ -46,9 +46,9 @@ In a support context, the cost of a false negative (not escalating when we shoul
 
 ---
 
-**8. TextBlob for sentiment over a fine-tuned Twitter model**
+**8. Cardiff NLP twitter-roberta-base-sentiment over TextBlob**
 
-Honest answer: it's a deliberate weakness I call out in the failure analysis. I used TextBlob because it's simple, interpretable, and requires no API calls or model loading. The right answer is cardiffnlp/twitter-roberta-base-sentiment, which was fine-tuned on 124M tweets. I called this out in "What I'd do with one more week" so it's clear I know the limitation.
+I started with TextBlob because it has no dependencies and is easy to inspect. It fell apart immediately on sarcasm -- "oh great, another broken update" registered as positive. I swapped in cardiffnlp/twitter-roberta-base-sentiment-latest, which was trained on 124M tweets and handles negation and amplifier language correctly. The tradeoff is a ~300ms cold-start on first load and the full transformers dependency. On the server (Render free tier, 512 MB RAM limit) transformers isn't installed, so it falls back to TextBlob there -- but the escalation engine adds an amplifier-word bonus ("furious", "unacceptable", "worst") on top of the polarity score to partially compensate.
 
 ---
 

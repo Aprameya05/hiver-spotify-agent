@@ -300,6 +300,26 @@ python scripts/generate_analysis.py --skip-umap
 
 ---
 
+## Confusion matrix
+
+![Confusion matrix](results/confusion_matrix.png)
+
+The two main error clusters are `playback_issue` <-> `app_bug` (both involve the app not working, separated by whether the issue is content-specific or general) and `content_unavailable` <-> `general_inquiry` (vague one-liners like "that song isn't there" land in general_inquiry when they lack enough context). `feature_request` is the cleanest class -- "please add X" is unambiguous.
+
+---
+
+## Failure analysis
+
+Three concrete failure modes from the golden eval set:
+
+**1. Playback vs. app bug confusion on short messages.** "App won't load my music" gets classified as `app_bug` (confidence 0.61) when the correct label is `playback_issue`. Both share vocabulary around "not working" and "music". The classifier only separates them reliably when the message includes device-specific language ("buffering on wifi", "skipping on bluetooth") or explicit bug framing ("crashes", "freezes"). Short messages without that context land on the wrong side of the boundary about 7% of the time. Fix: add more training examples that vary only in this axis, or add an explicit sub-intent for "general playback failure."
+
+**2. Sarcasm flips sentiment signal.** "Oh great, Spotify broke again, fantastic app you have" scores as mildly positive under TextBlob (it reads "great" and "fantastic" as positive). The Cardiff NLP model handles this better in the full pipeline, but on the Render demo where transformers isn't installed, the TextBlob fallback misses these. The amplifier-word bonus ("broken", "again") adds some escalation signal back, but the sentiment component alone would under-escalate an angry sarcastic message.
+
+**3. Multi-intent messages break the single-label assumption.** "I can't log in and I was also charged twice this month" is both `account_access` and `billing_payment`. The classifier picks the dominant signal (usually `account_access` because login failure vocabulary is stronger) and the billing issue goes undetected. The reply addresses login only. In the golden set, about 12 of the 196 examples are genuinely multi-intent -- they all get one label, which means the recall on the secondary intent is 0%.
+
+---
+
 ## What would break in production
 
 **Rate limits.** Groq's free tier allows 200k tokens per day. At roughly 400 tokens per LLM call and a 15-20% refinement rate, this supports around 3,000-4,000 messages per day before the LLM fallback starts failing. The classifier still runs without it, but intent accuracy drops about 7 points on edge cases.
