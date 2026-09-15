@@ -10,32 +10,9 @@ A production-grade AI customer support agent for Spotify, built on real Twitter 
 
 ## Architecture
 
-```mermaid
-flowchart LR
-    A([Customer message]) --> B[Clean & normalize]
-    B --> C{Stage 1\nIntent Classifier}
+![System architecture](assets/architecture.png)
 
-    C -->|confidence >= 0.62| D[Embedding + LR\nall-mpnet-base-v2]
-    C -->|confidence < 0.62| E[LLM fallback\nTop-3 candidates]
-    D --> F([Intent + confidence])
-    E --> F
-
-    F --> G{Stage 2\nReply Generator}
-    G --> H[FAISS retrieval\n28k QA pairs]
-    H --> I[Temporal reranking\nhalf-life 365d]
-    I --> J[LLM drafts reply\nTop-5 as context]
-    J --> K([Draft reply])
-
-    F --> L{Stage 3\nEscalation Engine}
-    K --> L
-    L --> M[5 signals fused\nweighted score]
-    M -->|score >= threshold| N([Escalate to human])
-    M -->|score < threshold| O([Auto-handle])
-
-    style A fill:#1DB954,color:#fff
-    style N fill:#c0392b,color:#fff
-    style O fill:#27ae60,color:#fff
-```
+Three stages in sequence: the intent classifier routes the message, the RAG reply generator drafts a response, and the escalation engine decides whether to hand off to a human.
 
 ---
 
