@@ -1,0 +1,12 @@
+version: "3.9"
+
+services:
+  agent:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      # Set your Groq API key here or pass it via .env file:
+      #   echo "GROQ_API_KEY=your_key" > .env
+      - GROQ_API_KEY=${GROQ_API_KEY:-}
+    restart: unless-stopped

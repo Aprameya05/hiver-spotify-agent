@@ -15,7 +15,7 @@ flowchart LR
     A([Customer message]) --> B[Clean & normalize]
     B --> C{Stage 1\nIntent Classifier}
 
-    C -->|confidence ≥ 0.62| D[Embedding + LR\nall-mpnet-base-v2]
+    C -->|confidence >= 0.62| D[Embedding + LR\nall-mpnet-base-v2]
     C -->|confidence < 0.62| E[LLM fallback\nTop-3 candidates]
     D --> F([Intent + confidence])
     E --> F
@@ -29,7 +29,7 @@ flowchart LR
     F --> L{Stage 3\nEscalation Engine}
     K --> L
     L --> M[5 signals fused\nweighted score]
-    M -->|score ≥ threshold| N([Escalate to human])
+    M -->|score >= threshold| N([Escalate to human])
     M -->|score < threshold| O([Auto-handle])
 
     style A fill:#1DB954,color:#fff
@@ -47,18 +47,23 @@ flowchart LR
 | Golden eval set (196 examples) | `data/golden_eval/examples.json` |
 | Labeling methodology | `data/golden_eval/labeling_notes.md` |
 | Evaluation harness + LLM judge | `eval/harness.py`, `eval/llm_judge.py` |
+| Human-judge agreement data | `data/human_judgments.json` |
 | Report (problem framing, baselines, failure analysis) | `report.md` |
 | Decision log (16 non-obvious decisions) | `decision_log.md` |
-| Real eval results | `results/eval_summary.json` |
-| Agent sanity check output | `results/sanity_check.json` |
+| Real eval results + human-judge agreement | `results/eval_summary.json` |
+| Web demo (FastAPI SPA) | `app_web.py` |
+| Test suite (58 tests, no ML deps needed) | `tests/` |
+| Docker setup | `Dockerfile`, `docker-compose.yml` |
 
 ---
 
 ## What it does
 
-1. **Intent classification** -- classifies each incoming customer message into one of 7 defined intents using a two-stage embedding classifier with a confidence-gated fallback.
-2. **Reply generation** -- retrieves the most similar historical Spotify responses from a FAISS index, then uses an LLM to draft a new reply grounded in those patterns (RAG with temporal weighting).
-3. **Escalation decision** -- fuses five signals (classifier confidence, sentiment polarity, message complexity, topic sensitivity, and security keywords) into a calibrated score that determines whether the message needs a human.
+**Stage 1: Intent classification.** Every incoming message is embedded with `all-mpnet-base-v2` and scored against a logistic regression classifier trained on hand-labelled examples. If the top-class confidence is below 0.62, the message gets passed to the LLM for adjudication between the top-3 candidates. If a prior conversation turn is provided, it gets prepended as `"{prior} [SEP] {text}"` before embedding so the classifier can resolve follow-up ambiguities -- "I already paid" after "my account got locked" maps to `account_access`, not `billing_payment`.
+
+**Stage 2: Reply generation.** 28,277 Spotify QA pairs are stored in a FAISS index. The top-15 most similar historical responses are retrieved, then reranked by recency (exponential decay, half-life 365 days). The top-5 go to the LLM as context, which drafts a fresh reply grounded in real Spotify support patterns.
+
+**Stage 3: Escalation.** Five signals are fused into a weighted score in [0, 1]: classifier confidence, message sentiment, message complexity, topic sensitivity, and security keyword detection. The threshold is now per-intent -- billing issues escalate at 0.35 while feature requests need to hit 0.90 before they bother a human.
 
 ---
 
@@ -75,7 +80,7 @@ The classifier was trained on 196 hand-labelled examples (28 per intent) and eva
 | DistilBERT val F1 (fine-tuned) | 1.0 |
 | Golden set size | 196 examples, 7 intents |
 
-The LLM judge was run on 5 examples using Gemini 3.6 Flash (temperature 0, free tier). Mean overall: **4.52/5**, tone: 5.00/5, relevance: 4.40/5, actionability: 4.00/5. Scores reflect intent-matched template replies since the RAG LLM key was exhausted; RAG-generated replies would score higher on actionability. The classifier metrics are real -- computed against actual labels, not proxies.
+The LLM judge was run on 5 examples using Gemini 3.6 Flash (temperature 0, free tier). Mean overall: **4.52/5**, tone: 5.00/5, relevance: 4.40/5, actionability: 4.00/5. Scores reflect intent-matched template replies since the RAG LLM key was exhausted during that run -- RAG-generated replies would score higher on actionability. The classifier metrics are real, computed against actual labels.
 
 The FAISS index was built from 28,277 Spotify QA pairs extracted from the full Twitter dataset.
 
@@ -91,24 +96,70 @@ Five real outputs from `results/sanity_check.json`:
 | please add offline mode to all devices | feature_request | high | No | 0.08 |
 | hi how do i cancel my premium subscription | general_inquiry | high | No | 0.19 |
 
-Billing and security issues escalate correctly. Feature requests and general questions are auto-handled.
+Billing and security messages escalate correctly. Feature requests and general questions are auto-handled.
 
 ---
 
 ## Web demo
 
-The live demo runs at [spotify-support-agent.onrender.com](https://spotify-support-agent.onrender.com) on Render's free tier -- it may take 30 seconds to wake up on first load.
+The live demo runs at [spotify-support-agent.onrender.com](https://spotify-support-agent.onrender.com) on Render's free tier. It may take 30 seconds to wake up on first load -- UptimeRobot pings the `/health` endpoint every 5 minutes during business hours to keep it warm.
 
-It runs in keyword fallback mode (no ML deps, no GPU needed) so it stays within the 512 MB memory limit. Type any customer message and it returns the classified intent, confidence score, draft reply, and escalation decision with reasoning.
+The demo runs in keyword fallback mode so it stays within the 512 MB memory limit (no torch, no sentence-transformers on the server). Set `GROQ_API_KEY` in the Render environment to get LLM-generated replies instead of templates.
 
-To run it locally:
+### What the UI shows
+
+Type any customer message and click Analyze Message (or press Ctrl+Enter). You get:
+
+**Detected Intent card** -- the top predicted intent with confidence percentage. Below the confidence bar, all 7 intent classes are shown as a ranked bar chart so you can see the full distribution, not just the winner. The top intent glows cyan; the rest render in proportion to their probability.
+
+**Draft Reply card** -- the LLM-generated or template reply with a one-click copy button.
+
+**Escalation Decision card** -- ESCALATE TO HUMAN or AUTO-HANDLE with the raw escalation score (0-1) and a progress bar.
+
+**Signal Breakdown card** -- five mini progress bars for the individual escalation signals (confidence, sentiment, complexity, sensitivity, security). Red means the signal is pushing toward escalation.
+
+**Latency card** -- end-to-end processing time in milliseconds.
+
+**JSON export** -- a button at the bottom of every result that downloads the full API response as a JSON file: intent, confidence, all 7 class scores, signal breakdown, reasons, reply, and latency.
+
+Additional features:
+
+- **Prior turn textarea** -- paste the previous message in a thread to help the classifier resolve follow-up ambiguity
+- **Animated counters** -- the hero metrics (93.4%, 4.52/5, 28k, 7) count up from zero on page load
+- **Typewriter reply** -- the draft reply text types itself out after each analysis
+- **Character counter** -- live "X / 280" counter on the main textarea, turns orange at 85% and red over the limit
+- **Recent history panel** -- the last 5 analyzed messages appear below the input; click any to replay it
+- **Example chips** -- 7 pre-loaded example messages across different intent categories
+- **Pipeline state indicator** -- the four-stage pipeline bar animates through classify, generate, escalate, and output as the request runs
+
+To run locally:
 
 ```bash
 pip install fastapi "uvicorn[standard]" pyyaml "groq>=0.4.0"
 export GROQ_API_KEY=...
 uvicorn app_web:app --reload
 # open http://localhost:8000
+# or: make web
 ```
+
+Or with Docker (no Python setup required):
+
+```bash
+GROQ_API_KEY=your_key docker compose up
+# open http://localhost:8000
+```
+
+---
+
+## Running the tests
+
+```bash
+pip install pytest fastapi httpx
+pytest tests/ -v
+# 58 tests, ~2s, no ML deps or model files needed
+```
+
+The suite covers escalation signal computation (`test_escalation.py`), keyword fallback routing and score shape (`test_keyword_fallback.py`), and all `/analyze` API contract properties (`test_api.py`).
 
 ---
 
@@ -122,7 +173,7 @@ cd hiver-spotify-agent
 pip install -e . --break-system-packages
 ```
 
-Python 3.10+ required. A GPU speeds up embedding significantly (CPU works but the 28k-vector FAISS build takes ~12 minutes vs ~30 seconds on GPU).
+Python 3.10+ required. A GPU speeds up embedding significantly -- the 28k-vector FAISS build takes ~12 minutes on CPU and ~30 seconds on a Colab A100.
 
 ### 2. Set API credentials
 
@@ -147,6 +198,7 @@ python scripts/run_pipeline.py --build-index --max-threads 10000
 
 # Evaluation only (index must already exist)
 python scripts/run_pipeline.py --eval-only
+# or: make eval
 ```
 
 Results are saved to `results/eval_summary.json`.
@@ -201,27 +253,29 @@ The 7 intents were derived from k-means clustering (k=8) over `all-mpnet-base-v2
 
 ---
 
-## Architecture
+## Architecture details
 
 ### Stage 1: Intent classification
 
-Two stages. First, a logistic regression head runs over `sentence-transformers/all-mpnet-base-v2` embeddings -- fast, deterministic, no API call needed. If the top-class confidence falls below 0.62 (tunable in config), the message gets passed to the LLM for adjudication between the top-3 candidates with full intent definitions as context.
+Two stages. First, a logistic regression head runs over `sentence-transformers/all-mpnet-base-v2` embeddings -- fast, deterministic, no API call needed. If the top-class confidence falls below 0.62, the message gets passed to the LLM for adjudication between the top-3 candidates with full intent definitions as context.
 
-The LLM fallback fires on roughly 15-20% of messages. It adds latency only for those cases. The rest are handled locally.
+The LLM fallback fires on roughly 15-20% of messages. It adds latency only for those cases.
+
+**Thread context.** The classifier accepts an optional `prior_turn` argument. When provided, the prior message is prepended as `"{prior} [SEP] {text}"` before embedding. This resolves a real ambiguity in multi-turn threads: a follow-up like "I already paid" can look like billing in isolation but is account_access in the context of "my login isn't working."
 
 The classifier is trained on the 196-example golden eval set. Without it (first run), it trains on 56 seed examples (8 per intent) -- still functional, noisier near intent boundaries.
 
-A DistilBERT model was also fine-tuned on the golden set for 8 epochs (val accuracy 1.0, val F1 1.0). That model lives in `models/distilbert-intent/` and can be used as an alternative to the embedding + logistic regression approach.
+A DistilBERT model was also fine-tuned on the golden set for 8 epochs (val accuracy 1.0, val F1 1.0). It lives in `models/distilbert-intent/` and can be swapped in as an alternative.
 
 ### Stage 2: Reply generation (RAG)
 
 28,277 Spotify QA pairs were extracted from the full dataset, embedded with `all-mpnet-base-v2`, and stored in a FAISS IndexFlatIP index. At query time:
 
-- The customer message is embedded and the top-15 most similar historical pairs are retrieved.
-- Each candidate's cosine similarity is multiplied by a temporal weight (exponential decay, half-life = 365 days). More recent Spotify replies score higher.
-- The top-5 are passed as few-shot context to the LLM, which drafts a new reply grounded in those patterns.
+1. The customer message is embedded and the top-15 most similar historical pairs are retrieved.
+2. Each candidate's cosine similarity is multiplied by a temporal weight (exponential decay, half-life = 365 days). More recent Spotify replies score higher.
+3. The top-5 are passed as few-shot context to the LLM, which drafts a new reply grounded in those patterns.
 
-The temporal weighting matters because Spotify's support tone shifted over the years in the dataset. Without recency weighting, the agent sometimes pulls older responses that suggest reinstalling the app as a first step, which is no longer the standard approach.
+The temporal weighting matters because Spotify's support tone shifted over the years in the dataset. Without recency weighting, the agent sometimes pulls older responses that suggest reinstalling the app as a first step, which is no longer standard.
 
 ### Stage 3: Escalation
 
@@ -229,19 +283,21 @@ Five signals, each in [0, 1], combined into a weighted score:
 
 | Signal | Weight | Logic |
 |---|---|---|
-| Classifier confidence | 0.25 | Low confidence means high escalation score |
-| Sentiment polarity | 0.25 | TextBlob polarity; strong anger triggers escalation |
-| Message complexity | 0.15 | Long or multi-part messages escalate |
+| Classifier confidence | 0.25 | Low confidence means high escalation signal |
+| Sentiment polarity | 0.25 | Strong anger or amplifier words trigger escalation |
+| Message complexity | 0.15 | Long or multi-question messages escalate |
 | Topic sensitivity | 0.20 | Billing and account_access carry higher base risk |
-| Security keywords | 0.15 | Regex on "hacked", "fraud", "unauthorized", etc. |
+| Security keywords | 0.15 | Regex on "hacked", "fraud", "unauthorized", "lawyer", etc. |
 
-The escalation threshold is now per-intent (configured in `configs/config.yaml`). Billing and account_access use a lower threshold (0.35-0.38) so they escalate more aggressively. Feature requests use 0.90 so they almost never reach a human unnecessarily.
+The sentiment backend loads `cardiffnlp/twitter-roberta-base-sentiment-latest` when `transformers` is available (trained on 124M tweets, handles sarcasm much better than TextBlob). It falls back to TextBlob if transformers is not installed. Amplifier words ("furious", "unacceptable", "worst", "absolutely", etc.) add up to a 0.30 bonus on top of the polarity score.
+
+Escalation thresholds are per-intent in `configs/config.yaml`. Billing and account_access use a lower threshold (~0.35) so they escalate aggressively. Feature requests use 0.90 so they almost never reach a human.
 
 ---
 
 ## LLM provider
 
-The agent uses Groq as the free LLM backend. The working model is `qwen/qwen3.8-27b`. This is configured in `configs/config.yaml` and `src/utils.py`. If you're on the Groq free tier, the eval harness skips LLM-judge scoring to avoid hitting the 200k token/day limit -- classifier metrics are computed regardless.
+The agent uses Groq as the free LLM backend. The working model is `qwen/qwen3.8-27b`, configured in `configs/config.yaml` and `src/utils.py`. On the Groq free tier, the eval harness skips LLM-judge scoring to avoid hitting the 200k token/day limit -- classifier metrics are computed regardless.
 
 To use OpenAI instead, set `OPENAI_API_KEY` and unset `GROQ_API_KEY`. The client auto-selects based on which key is present.
 
@@ -269,35 +325,23 @@ python scripts/generate_analysis.py --skip-umap
 
 ## What would break in production
 
-**Rate limits.** Groq's free tier allows 200k tokens per day. At ~400 tokens per LLM call and a 15-20% refinement rate, this supports roughly 3,000-4,000 messages per day before the LLM fallback starts failing. The classifier still works without it, but intent accuracy drops ~7 points on edge cases.
+**Rate limits.** Groq's free tier allows 200k tokens per day. At roughly 400 tokens per LLM call and a 15-20% refinement rate, this supports around 3,000-4,000 messages per day before the LLM fallback starts failing. The classifier still runs without it, but intent accuracy drops about 7 points on edge cases.
 
-**Index staleness.** The FAISS index is built once from a 2017-2020 snapshot. Spotify's product, pricing, and support language have changed since then. Replies in the index reference old UI flows and features. The index should be rebuilt periodically against fresh support tickets, not a fixed historical dataset.
+**Index staleness.** The FAISS index is built from a 2017-2020 snapshot. Spotify's product, pricing, and support language have changed since. Replies in the index reference old UI flows and features that no longer exist. The index should be rebuilt periodically against fresh support tickets, not a fixed historical dataset.
 
-**Embedding model has no Spotify vocabulary.** `all-mpnet-base-v2` was trained on generic text. Spotify-specific jargon ("Canvas", "Stations", "Liked Songs", "Connect") gets embedded based on surrounding context, not actual meaning. A model fine-tuned on music/streaming support text would have noticeably better intent separation on niche issues.
+**Embedding model has no Spotify vocabulary.** `all-mpnet-base-v2` was trained on generic text. Spotify-specific terms like Canvas, Stations, and Liked Songs get embedded based on surrounding context rather than actual product meaning. A model fine-tuned on music or streaming support text would have noticeably better intent separation on niche issues.
 
-**Twitter-length assumption.** The whole pipeline was designed for messages under 280 characters. Feed it a long customer email or a phone transcript and the complexity signal fires, reply retrieval finds poor matches, and the LLM generates something too terse to be useful.
-
----
-
-## What I'd do next
-
-1. **Cardiff sentiment is already implemented.** `src/escalation_engine.py` loads `cardiffnlp/twitter-roberta-base-sentiment-latest` when `transformers` is available, and falls back to TextBlob if not. It handles sarcasm and all-caps significantly better.
-
-2. **Add thread context to the classifier.** Right now each message is classified in isolation. Adding the prior 1-2 turns as context would resolve most of the billing/account_access boundary confusion.
-
-3. **Per-intent escalation thresholds are implemented.** See `configs/config.yaml` under `escalation.per_intent_thresholds`. Feature requests use 0.90 (almost never escalate). Billing uses 0.35 (escalate aggressively). The global threshold was 0.50 for everything.
-
-4. **Build a live A/B test harness.** BLEU, ROUGE, and LLM judge scores are proxies. The only metric that actually matters in production is re-contact rate -- how often does the customer need to follow up after the auto-reply.
+**Twitter-length assumption.** The entire pipeline was designed around messages under 280 characters. Feed it a long customer email or a phone transcript and the complexity signal fires, retrieval finds poor matches, and the LLM generates something too terse to be useful.
 
 ---
 
 ## Known limitations
 
-- The golden eval set was built using the same embedding classifier used for training, which means it skews toward examples the classifier was already confident about. Accuracy on true random traffic is probably a few points lower.
-- The intent taxonomy was defined from the same corpus it was evaluated on. That always flatters the numbers.
-- `general_inquiry` is a catch-all with no stable definition. Strip it out and run 6-way classification -- accuracy drops ~4 points.
-- Very short messages (under 5 words) give the embedding model almost nothing to work with. They tend to fall into general_inquiry by default and should probably always escalate.
-- TextBlob misses sarcasm. "Oh great, another broken update, fantastic" registers as slightly positive. A dedicated sarcasm signal would help here.
+- The golden eval set was built using the same embedding classifier used for training. This means it skews toward examples the classifier was already confident about. Accuracy on truly random traffic is probably a few points lower.
+- The intent taxonomy was defined from the same corpus it was evaluated on, which always flatters the numbers slightly.
+- `general_inquiry` is a catch-all with no stable definition. Strip it out and run 6-way classification and accuracy drops about 4 points.
+- Very short messages (under 5 words) give the embedding model almost nothing to work with. They tend to fall into `general_inquiry` by default and should probably always escalate.
+- TextBlob misses sarcasm. "Oh great, another broken update, fantastic" registers as slightly positive. The Cardiff sentiment model handles this better but requires the full `transformers` install.
 
 ---
 
@@ -305,7 +349,8 @@ python scripts/generate_analysis.py --skip-umap
 
 Core: `sentence-transformers`, `faiss-cpu`, `groq`, `openai`, `scikit-learn`, `pandas`, `textblob`, `scipy`, `transformers`, `torch`  
 Evaluation: `rouge-score`, `nltk`  
-CLI: `typer`, `rich`
+CLI: `typer`, `rich`  
+Web demo only: `fastapi`, `uvicorn[standard]`, `pyyaml`
 
 All versions pinned in `pyproject.toml`. Install with `pip install -e .`
 
@@ -330,9 +375,9 @@ python scripts/run_pipeline.py --eval-only
 # Results: results/eval_summary.json
 ```
 
-On a CPU machine, the data + index step takes ~8-12 minutes. On a GPU (tested on Colab A100), the embedding pass takes ~30 seconds for the full 28k-pair dataset.
+On a CPU machine, the data + index step takes 8-12 minutes. On a GPU (tested on Colab A100), the embedding pass takes about 30 seconds for the full 28k-pair dataset.
 
-To run on the full dataset without a thread cap, remove `--max-threads`. Expect ~45 minutes on CPU.
+To run on the full dataset without a thread cap, remove `--max-threads`. Expect around 45 minutes on CPU.
 
 ---
 
@@ -343,3 +388,5 @@ Dataset: Thoughtvector. "Customer Support on Twitter." Kaggle, 2017. https://www
 Embedding model: Reimers, N. and Gurevych, I. "Sentence-BERT: Sentence Embeddings using Siamese BERT-Networks." EMNLP 2019.
 
 FAISS: Johnson, J., Douze, M., and Jegou, H. "Billion-scale similarity search with GPUs." IEEE Transactions on Big Data, 2019.
+
+Sentiment model: Barbieri, F., Camacho-Collados, J., Espinosa-Anke, L., and Neves, L. "TweetEval: Unified Benchmark and Comparative Evaluation for Tweet Classification." EMNLP Findings, 2020.

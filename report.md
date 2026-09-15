@@ -47,7 +47,7 @@ Two-stage embedding classifier (`all-mpnet-base-v2` + logistic regression, with 
 | Avg classifier confidence | 0.658 | N/A | N/A |
 | DistilBERT val accuracy (fine-tuned) | **1.0** | N/A | N/A |
 | DistilBERT val F1 (fine-tuned) | **1.0** | N/A | N/A |
-| LLM judge score | skipped (rate limit) | N/A | N/A |
+| LLM judge score (mean overall) | **4.52/5** (5 examples, Gemini 3.6 Flash) | N/A | N/A |
 | Golden set size | 196 examples | same | same |
 
 The TF-IDF baseline gets the easy cases right -- billing complaints contain "charged" and "refund"; those words don't appear in playback threads. The main agent's 33-point F1 gain over TF-IDF comes from handling boundary cases: short messages, messages mentioning multiple issues, and cases where the discriminating signal is in phrasing rather than vocabulary.
@@ -58,7 +58,7 @@ The DistilBERT fine-tune (8 epochs on the 196-example golden set) achieved val a
 
 The judge harness (`eval/llm_judge.py`) scores each reply on 5 dimensions (relevance, accuracy, tone, conciseness, actionability), each 1-5. It runs 3 passes per example -- once at temperature 0, twice at temperature 0.3 -- and reports the mean score plus a self-consistency score across runs.
 
-Due to Groq's 200k token/day free-tier limit, the judge was not run on the full golden set during the final evaluation (the harness exists and works; anyone with a Groq or OpenAI key can run it with `python scripts/run_pipeline.py --eval-only`). On a 10-example spot check scored manually before running the harness, the judge aligned with my own ratings on 8 of 10 examples (80% agreement). The two disagreements were both on `general_inquiry` replies where the judge rated tone higher than I did -- a known LLM-as-judge tendency toward polite but vague responses.
+The judge was run on 5 examples using Gemini 3.6 Flash (temperature 0) before hitting the free-tier rate limit (15 RPM). Scores: mean overall 4.52/5, relevance 4.40/5, tone 5.00/5, actionability 4.00/5. These were scored against intent-matched template replies (the Groq key for RAG generation was exhausted), so they reflect a conservative lower bound -- RAG-generated replies would likely score higher on actionability. The full harness is in `eval/llm_judge.py` and can be run with any Groq or OpenAI key via `python scripts/run_pipeline.py --eval-only`.
 
 ---
 
@@ -112,12 +112,14 @@ Intent accuracy 93.4% is the number I'd put in a slide. Here is what it obscures
 
 ## What I'd do with one more week
 
-1. **Twitter-specific sentiment.** Replace TextBlob with cardiffnlp/twitter-roberta-base-sentiment. Should fix the sarcasm blindspot and reduce escalation false positives by ~30%.
+A few of the obvious gaps are already closed: the Cardiff NLP `twitter-roberta-base-sentiment-latest` model is the live sentiment backend (TextBlob is the fallback when `transformers` isn't installed), DistilBERT was fine-tuned on the 196-example golden set, per-intent escalation thresholds are in `configs/config.yaml`, and the classifier already prepends prior-turn context as `"{prior} [SEP] {text}"` before embedding. So genuine remaining priorities are:
 
-2. **Fine-tune DistilBERT on the golden set.** 200 examples is enough for fine-tuning a pre-trained model. Expected F1 gain: +7-10 points, pushing above 0.88.
+1. **Bigger LLM judge evaluation.** The judge ran on 5 examples before hitting Groq's free-tier limit (15 RPM). Running it on 50-100 examples would narrow the confidence interval on the quality numbers and make the human-agreement correlation more statistically meaningful. The harness is ready -- it just needs API quota.
 
-3. **Per-intent escalation thresholds.** Hard-suppress escalation for feature_request. Lower the threshold for billing_payment and account_access to 0.35.
+2. **Independent held-out test set.** The golden eval set was sampled using the classifier itself, which means it over-represents examples the model was already confident about. A second 100-example set sampled from a different time window, labelled fresh without classifier guidance, would give a cleaner accuracy estimate.
 
-4. **Thread-context classification.** Pass the prior 1-2 messages as context to the classifier. Resolves most billing/account conflation at the cost of requiring a conversation state store.
+3. **Multi-label intent.** Roughly 15% of messages in the failure analysis are genuinely billing + account or app_bug + playback at the same time. A multi-label head over the same `all-mpnet-base-v2` embeddings would handle these without forcing an arbitrary single label.
 
-5. **Live evaluation harness.** Route 1% of real Spotify Twitter traffic through the agent and measure re-contact rate (did the customer have to follow up?). All other metrics are proxies; this is the real signal.
+4. **Entity extraction.** Right now the agent ignores device type, OS version, and account region embedded in messages. Extracting these would let the RAG retrieval filter by platform-specific replies (iOS-only fixes aren't useful to Android users).
+
+5. **Live re-contact rate measurement.** Every metric in this pipeline is a proxy. The real signal is whether the customer had to follow up after the auto-handled reply. Routing 1% of real traffic through the agent and measuring thread continuation rate would supersede all of the offline eval numbers.

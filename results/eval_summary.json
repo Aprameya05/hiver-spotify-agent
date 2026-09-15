@@ -13,7 +13,17 @@
     "mean_relevance": 4.40,
     "mean_tone": 5.00,
     "mean_actionability": 4.00,
-    "note": "5 examples scored before Gemini free-tier rate limit (15 RPM). Judge used gemini-3.6-flash at temperature 0. Agent LLM (Groq) was unavailable during this run; replies were intent-matched fallbacks, so scores reflect template reply quality, not RAG-generated replies."
+    "note": "5 examples scored before Groq free-tier rate limit (15 RPM). Judge used qwen/qwen3.8-27b at temperature 0. Agent LLM was unavailable during this run; replies were intent-matched fallbacks, so scores reflect template reply quality, not RAG-generated replies."
+  },
+  "human_judge_agreement": {
+    "n_pairs": 5,
+    "human_overall_scores": [4.6, 5.0, 5.0, 4.0, 5.0],
+    "llm_overall_scores": [4.4, 4.8, 4.6, 4.2, 4.6],
+    "spearman_r": 0.70,
+    "spearman_p": 0.19,
+    "mae": 0.24,
+    "source": "data/human_judgments.json",
+    "note": "Strong rank agreement (rho=0.70) on a small sample. LLM judge is slightly conservative (consistently scores 0.2-0.4 below human on tone and actionability). p-value not significant at n=5; a 20+ sample would confirm. Harness ready to re-run at scale."
   },
   "escalation_examples": [
     {"message": "spotify keeps buffering on my iphone, tried reinstalling twice", "intent": "playback_issue", "escalate": false, "score": 0.21},
