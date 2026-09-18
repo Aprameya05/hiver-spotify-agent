@@ -200,36 +200,35 @@ python scripts/run_pipeline.py --eval-only
 Results are saved to `results/eval_summary.json`.
 
 ---
-
 ## Repository structure
+
+```
 hiver-spotify-agent/
 ├── src/
-│ ├── data_pipeline.py # download, filter, thread reconstruction
-│ ├── intent_classifier.py # two-stage embedding + LLM classifier
-│ ├── reply_generator.py # FAISS-RAG with temporal weighting
-│ ├── escalation_engine.py # multi-signal escalation decision
-│ ├── agent.py # orchestrates all three stages
-│ └── utils.py # shared helpers (Groq/OpenAI client, logging)
+│   ├── data_pipeline.py       # download, filter, thread reconstruction
+│   ├── intent_classifier.py   # two-stage embedding + LLM classifier
+│   ├── reply_generator.py     # FAISS-RAG with temporal weighting
+│   ├── escalation_engine.py   # multi-signal escalation decision
+│   ├── agent.py               # orchestrates all three stages
+│   └── utils.py               # shared helpers (Groq/OpenAI client, logging)
 ├── eval/
-│ ├── harness.py # full evaluation + baselines
-│ ├── llm_judge.py # LLM-as-judge with consistency scoring
-│ └── metrics.py # accuracy, F1, BLEU, ROUGE-L
+│   ├── harness.py             # full evaluation + baselines
+│   ├── llm_judge.py           # LLM-as-judge with consistency scoring
+│   └── metrics.py             # accuracy, F1, BLEU, ROUGE-L
 ├── scripts/
-│ ├── run_pipeline.py # master runner
-│ ├── build_golden_eval.py # golden set construction
-│ └── demo.py # interactive CLI
+│   ├── run_pipeline.py        # master runner
+│   ├── build_golden_eval.py   # golden set construction
+│   └── demo.py                # interactive CLI
 ├── data/
-│ └── golden_eval/
-│ └── examples.json # 196 labelled examples across 7 intents
-├── app_web.py # FastAPI web demo (single-file SPA)
-├── configs/config.yaml # all tunable parameters
+│   └── golden_eval/
+│       └── examples.json      # 196 labelled examples across 7 intents
+├── app_web.py                 # FastAPI web demo (single-file SPA)
+├── configs/config.yaml        # all tunable parameters
 ├── results/
-│ ├── eval_summary.json # classifier and DistilBERT eval numbers
-│ └── sanity_check.json # 5-message agent sanity check output
-└── models/ # fine-tuned DistilBERT (gitignored, too large)
-
----
-
+│   ├── eval_summary.json      # classifier and DistilBERT eval numbers
+│   └── sanity_check.json      # 5-message agent sanity check output
+└── models/                    # fine-tuned DistilBERT (gitignored, too large)
+```
 ## Intent taxonomy
 
 The 7 intents were derived from k-means clustering (k=8) over `all-mpnet-base-v2` embeddings of customer messages, followed by LLM-assisted naming and cluster merging.
